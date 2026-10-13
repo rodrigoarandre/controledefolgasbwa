@@ -1,0 +1,10 @@
+# Dados pessoais dos motoristas: nunca versionar (repositório público, LGPD)
+*.xlsx
+*.xls
+*.csv
+folgas-bwa_*.json
+
+# Estado de ferramentas locais
+.state.json
+.claude/
+node_modules/

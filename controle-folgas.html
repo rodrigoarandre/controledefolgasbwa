@@ -1,0 +1,1966 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controle de Folgas BWA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap">
+<style>
+:root {
+  --asfalto: #1E272D;
+  --asfalto-2: #2C3940;
+  --texto: #24313A;
+  --texto-2: #57656D;
+  --texto-3: #87949A;
+  --linha: #DCE2E2;
+  --linha-forte: #B8C2C3;
+  --fundo: #ECEFEE;
+  --sup: #FFFFFF;
+  --sup-2: #F5F7F6;
+  --verde: #0B6B47;
+  --verde-esc: #08523A;
+  --verde-cl: #D8EEE3;
+  --amarelo: #F2B705;
+  --amarelo-cl: #FFF3C7;
+  --amarelo-txt: #7A5A00;
+  --vermelho: #BF3A2B;
+  --vermelho-cl: #F8E1DD;
+  --azul: #2C62A3;
+  --azul-cl: #DEE8F5;
+  --roxo: #6B4A9B;
+  --roxo-cl: #EBE3F5;
+  --fonte: "Barlow", "Segoe UI", Roboto, Arial, sans-serif;
+  --fonte-cond: "Barlow Semi Condensed", "Barlow", "Arial Narrow", "Segoe UI", sans-serif;
+  --raio: 6px;
+  --alt-topo: 72px;
+  --w-nome: 230px;
+  --w-banco: 64px;
+  --w-ciclo: 132px;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--fundo);
+  color: var(--texto);
+  font: 15px/1.45 var(--fonte);
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--amarelo); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+/* ---------- Topo ---------- */
+.topo { background: var(--asfalto); color: #fff; position: sticky; top: 0; z-index: 30; }
+.topo::after {
+  content: ""; display: block; height: 4px;
+  background: repeating-linear-gradient(90deg, var(--amarelo) 0 34px, transparent 34px 58px);
+}
+.topo-in { display: flex; align-items: center; gap: 16px 20px; padding: 11px 20px 12px; flex-wrap: wrap; }
+.marca { display: flex; flex-direction: column; line-height: 1.15; margin-right: 6px; }
+.marca b { font: 700 20px/1.1 var(--fonte-cond); letter-spacing: .005em; }
+.marca span { font-size: 12.5px; color: #A9BBC1; }
+.marca .simulado { color: var(--amarelo); }
+.comp { display: flex; align-items: center; gap: 2px; background: var(--asfalto-2); border-radius: 8px; padding: 3px; }
+.comp > button { background: transparent; border: 0; color: #fff; cursor: pointer; border-radius: 6px; }
+.comp > button:hover { background: rgba(255,255,255,.08); }
+.comp .seta { width: 32px; height: 38px; font-size: 20px; line-height: 1; }
+.comp-txt { min-width: 158px; padding: 2px 8px; text-align: center; }
+.comp-txt b { display: block; font: 600 17px/1.15 var(--fonte-cond); }
+.comp-txt span { display: block; font-size: 12px; color: #A9BBC1; }
+.status-backup { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 6px 12px; border-radius: 999px; background: rgba(255,255,255,.06); }
+.status-backup i { width: 9px; height: 9px; border-radius: 50%; background: var(--texto-3); flex: none; }
+.status-backup.ok i { background: #3DBB7D; }
+.status-backup.pend { background: rgba(242,183,5,.14); color: #FFE08A; }
+.status-backup.pend i { background: var(--amarelo); box-shadow: 0 0 0 3px rgba(242,183,5,.25); }
+.acoes { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
+
+.btn {
+  border: 1px solid var(--linha-forte); background: var(--sup); color: var(--texto);
+  padding: 7px 13px; border-radius: var(--raio); cursor: pointer; font-weight: 600; font-size: 14px; line-height: 1.3;
+}
+.btn:hover { background: var(--sup-2); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-pri { background: var(--verde); border-color: var(--verde); color: #fff; }
+.btn-pri:hover { background: var(--verde-esc); }
+.btn-perigo { background: var(--vermelho); border-color: var(--vermelho); color: #fff; }
+.btn-perigo:hover { background: #A23022; }
+.topo .btn { background: transparent; color: #fff; border-color: rgba(255,255,255,.24); }
+.topo .btn:hover { background: rgba(255,255,255,.08); }
+.topo .btn-pri { background: var(--amarelo); border-color: var(--amarelo); color: var(--asfalto); }
+.topo .btn-pri:hover { background: #FFC82A; }
+.btn-link { background: none; border: 0; padding: 4px 6px; cursor: pointer; color: var(--texto-2); font-size: 13.5px; text-decoration: underline; text-underline-offset: 2px; }
+.btn-link.perigo { color: var(--vermelho); }
+
+/* ---------- Painel ---------- */
+.painel { display: grid; grid-template-columns: 1fr 1fr 1fr; background: var(--sup); border-bottom: 1px solid var(--linha); }
+.bloco { padding: 16px 20px 14px; border-right: 1px solid var(--linha); min-width: 0; }
+.bloco:last-child { border-right: 0; }
+.bloco h2 { font: 600 17px/1.2 var(--fonte-cond); margin: 0; color: var(--asfalto); }
+.bloco .sub { margin: 1px 0 10px; color: var(--texto-2); font-size: 13px; }
+.ranking { list-style: none; margin: 0; padding: 0 4px 0 0; max-height: 236px; overflow: auto; }
+.rank-item {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr) 84px 30px; align-items: center; gap: 8px;
+  width: 100%; border: 0; background: transparent; padding: 3px 6px; border-radius: 5px; cursor: pointer; text-align: left;
+}
+.rank-item:hover { background: var(--sup-2); }
+.rank-pos { color: var(--texto-3); font: 500 13px var(--fonte-cond); text-align: right; }
+.rank-nome { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 14px; }
+.rank-barra { height: 8px; background: var(--fundo); border-radius: 4px; overflow: hidden; }
+.rank-barra i { display: block; height: 100%; background: var(--verde); border-radius: 4px; }
+.rank-trab .rank-barra i { background: var(--asfalto-2); }
+.rank-valor { font: 700 17px/1 var(--fonte-cond); text-align: right; font-variant-numeric: tabular-nums; }
+.rank-item.zero .rank-valor { color: var(--texto-3); font-weight: 500; }
+.alerta-grupo + .alerta-grupo { margin-top: 14px; }
+.alerta-grupo h3 { font: 600 14px/1.3 var(--fonte); margin: 0 0 2px; display: flex; align-items: center; gap: 8px; }
+.alerta-grupo h3 i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+.al-hoje h3 i { background: var(--vermelho); }
+.al-amanha h3 i { background: var(--amarelo); }
+.alerta-grupo .qtd { font: 700 15px var(--fonte-cond); color: var(--texto-2); }
+.alerta-grupo .dica { margin: 0 0 7px 18px; font-size: 12.5px; color: var(--texto-2); }
+.alerta-lista { display: flex; flex-wrap: wrap; gap: 6px; margin-left: 18px; max-height: 120px; overflow: auto; }
+.alerta-lista button { border: 1px solid; border-radius: 999px; padding: 2px 10px; font-size: 13px; cursor: pointer; }
+.al-hoje .alerta-lista button { background: var(--vermelho-cl); border-color: #E9B1A8; color: #7E2117; }
+.al-amanha .alerta-lista button { background: var(--amarelo-cl); border-color: #EAD07A; color: var(--amarelo-txt); }
+.vazio { color: var(--texto-3); font-size: 13.5px; margin: 0; }
+.alerta-grupo .vazio { margin-left: 18px; }
+
+/* ---------- Barra da grade ---------- */
+.barra { display: flex; align-items: center; gap: 10px 14px; padding: 14px 20px 10px; flex-wrap: wrap; }
+.busca { width: 250px; padding: 7px 11px; border: 1px solid var(--linha-forte); border-radius: var(--raio); background: var(--sup); }
+.legenda { display: flex; gap: 6px 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--texto-2); align-items: center; margin-left: 4px; }
+.legenda > span { display: inline-flex; align-items: center; gap: 5px; }
+.lg-fer { width: 16px; height: 16px; border-radius: 3px; background: #FFF6D8; border: 1px solid #EAD07A; display: inline-block; }
+.lg-mov { font: 700 12px var(--fonte-cond); }
+
+/* ---------- Grade ---------- */
+.grade-wrap {
+  margin: 0 20px 28px; background: var(--sup); border: 1px solid var(--linha); border-radius: 8px;
+  overflow: auto; max-height: calc(100vh - var(--alt-topo) - 24px);
+}
+table.grade { border-collapse: separate; border-spacing: 0; font-variant-numeric: tabular-nums; }
+.grade th, .grade td { border-bottom: 1px solid var(--linha); padding: 0; }
+.grade thead th { position: sticky; top: 0; background: var(--sup); z-index: 3; border-bottom: 1px solid var(--linha-forte); }
+.grade .col-nome, .grade .col-banco, .grade .col-ciclo { position: sticky; z-index: 2; background: var(--sup); }
+.grade thead .col-nome, .grade thead .col-banco, .grade thead .col-ciclo { z-index: 5; }
+.grade .col-nome { left: 0; width: var(--w-nome); min-width: var(--w-nome); max-width: var(--w-nome); text-align: left; padding: 3px 10px; }
+.grade .col-banco { left: var(--w-nome); width: var(--w-banco); min-width: var(--w-banco); max-width: var(--w-banco); text-align: center; border-left: 1px solid var(--linha); }
+.grade .col-ciclo { left: calc(var(--w-nome) + var(--w-banco)); width: var(--w-ciclo); min-width: var(--w-ciclo); max-width: var(--w-ciclo); padding: 0 10px; border-left: 1px solid var(--linha); box-shadow: 2px 0 0 var(--linha-forte); }
+.grade thead .col-nome, .grade thead .col-banco, .grade thead .col-ciclo, .grade thead .col-trab {
+  font: 600 13px/1.2 var(--fonte); color: var(--texto-2); vertical-align: bottom; padding-bottom: 7px;
+}
+.grade thead .col-banco, .grade thead .col-trab { padding-left: 4px; padding-right: 4px; }
+.nome { display: block; width: 100%; border: 0; background: none; padding: 0; text-align: left; cursor: pointer; font-weight: 600; font-size: 14px; color: var(--asfalto); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nome:hover { text-decoration: underline; text-underline-offset: 2px; }
+.obs { display: block; font-size: 11.5px; color: var(--texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+td.col-banco { font: 700 20px/1 var(--fonte-cond); color: var(--verde); }
+td.col-banco.zero { color: var(--texto-3); font-weight: 500; }
+.col-trab { min-width: 62px; text-align: center; border-left: 2px solid var(--linha-forte); font: 600 15px var(--fonte-cond); padding: 0 6px; }
+
+th.dia { width: 36px; min-width: 36px; max-width: 36px; text-align: center; padding: 0; border-left: 1px solid #EEF1F1; }
+.dia-bt { display: block; width: 100%; border: 0; background: transparent; padding: 6px 0 5px; cursor: pointer; color: inherit; }
+.dia-bt:hover { background: rgba(30,39,45,.07); }
+th.dia.hoje .dia-bt:hover { background: rgba(255,255,255,.12); }
+th.dia .sem { display: block; font: 500 11px/1.2 var(--fonte); color: var(--texto-3); }
+th.dia .num { display: block; font: 600 15px/1.15 var(--fonte-cond); color: var(--texto); }
+th.dia.dom .sem { color: var(--vermelho); }
+th.dia.mes { border-left: 2px solid var(--linha-forte); }
+th.dia.fer { background: #FFF1BF; }
+th.dia.hoje { background: var(--asfalto); }
+th.dia.hoje .sem, th.dia.hoje .num { color: #fff; }
+
+td.cel {
+  width: 36px; min-width: 36px; max-width: 36px; height: 38px; text-align: center; vertical-align: middle;
+  border-left: 1px solid #EEF1F1; cursor: pointer; position: relative; padding-top: 7px;
+}
+td.cel.mes { border-left: 2px solid var(--linha-forte); }
+td.cel.fer { background: #FFF8DE; }
+td.cel.hoje { box-shadow: inset 2px 0 0 var(--asfalto), inset -2px 0 0 var(--asfalto); }
+td.cel.futuro { background-image: repeating-linear-gradient(135deg, transparent 0 6px, #EFF2F2 6px 7px); }
+td.cel.antes { background: #F1F3F3; cursor: not-allowed; }
+td.cel:not(.antes):hover { box-shadow: inset 0 0 0 2px var(--linha-forte); }
+td.cel:focus-visible { outline: 2px solid var(--amarelo); outline-offset: -2px; }
+td.cel.setimo { background: var(--amarelo-cl); }
+.sete { font: 600 11px var(--fonte-cond); color: var(--amarelo-txt); }
+.mov { position: absolute; top: 2px; right: 3px; font: 700 10.5px/1 var(--fonte-cond); }
+.mov.mais { color: var(--amarelo-txt); }
+.mov.menos { color: var(--verde); }
+.chip {
+  display: inline-flex; align-items: center; justify-content: center; min-width: 25px; height: 21px; padding: 0 3px;
+  border-radius: 4px; font: 700 12px/1 var(--fonte-cond); letter-spacing: .02em; font-style: normal;
+}
+.c-T { border: 1px dashed var(--linha-forte); }
+.c-F { background: var(--verde); color: #fff; }
+.c-FE { background: var(--azul-cl); color: var(--azul); }
+.c-A { background: var(--roxo-cl); color: var(--roxo); }
+.c-X { background: var(--vermelho-cl); color: var(--vermelho); }
+.futuro .chip { opacity: .55; }
+.grade tbody tr:hover > th, .grade tbody tr:hover > td.col-banco, .grade tbody tr:hover > td.col-ciclo { background: var(--sup-2); }
+.grade tr.flash > * { animation: flash 1.8s ease-out; }
+@keyframes flash { 0%, 35% { background-color: var(--amarelo-cl); } }
+.grade-vazia { padding: 48px 24px; text-align: center; }
+.grade-vazia h2 { font: 600 20px var(--fonte-cond); margin: 0 0 6px; color: var(--asfalto); }
+.grade-vazia p { margin: 0 auto 16px; color: var(--texto-2); max-width: 520px; }
+.grade-vazia .btn + .btn { margin-left: 8px; }
+
+/* Anel do ciclo (inspirado no disco de tacógrafo) */
+.anel { display: flex; align-items: center; gap: 8px; }
+.anel svg { flex: none; }
+.anel path { fill: none; stroke-width: 4.2; }
+.anel .on { stroke: var(--asfalto-2); }
+.anel .off { stroke: #DDE3E3; }
+.anel .folga { stroke: #A9D8BF; }
+.anel.amanha .on { stroke: var(--amarelo); }
+.anel.amanha .folga { stroke: var(--amarelo-txt); }
+.anel.hoje path { stroke: var(--vermelho); }
+.anel-txt { line-height: 1.1; min-width: 0; }
+.anel-txt b { display: block; font: 600 14px/1.15 var(--fonte-cond); }
+.anel-txt small { display: block; font-size: 11.5px; color: var(--texto-3); white-space: nowrap; }
+.anel.amanha .anel-txt small { color: var(--amarelo-txt); font-weight: 600; }
+.anel.hoje .anel-txt b, .anel.hoje .anel-txt small { color: var(--vermelho); }
+.anel.hoje .anel-txt small { font-weight: 600; }
+
+/* ---------- Menu da célula ---------- */
+.menu {
+  position: fixed; z-index: 50; background: var(--sup); border: 1px solid var(--linha-forte); border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(20,30,35,.2); width: 264px; padding: 6px;
+}
+.menu-cab { padding: 6px 8px 8px; border-bottom: 1px solid var(--linha); margin-bottom: 4px; }
+.menu-cab b { display: block; font-size: 14px; color: var(--asfalto); }
+.menu-cab span { font-size: 12.5px; color: var(--texto-2); }
+.menu button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; padding: 6px 8px; border-radius: 5px; cursor: pointer; text-align: left; font-size: 14px; }
+.menu button:hover, .menu button:focus-visible { background: var(--sup-2); outline: none; box-shadow: inset 0 0 0 2px var(--amarelo); }
+.menu button.atual { background: var(--fundo); font-weight: 600; }
+.menu kbd { margin-left: auto; font: 500 12px var(--fonte-cond); color: var(--texto-3); border: 1px solid var(--linha); border-radius: 4px; padding: 0 6px; }
+.menu .sep { border-top: 1px solid var(--linha); margin: 4px 0; }
+.menu-info { font-size: 12.5px; color: var(--texto-2); padding: 4px 8px 4px; }
+
+/* ---------- Modais ---------- */
+.modal-fundo { position: fixed; inset: 0; background: rgba(20,28,32,.48); z-index: 60; display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 24px; overflow: auto; }
+.modal { background: var(--sup); border-radius: 10px; width: min(560px, 100%); box-shadow: 0 24px 64px rgba(0,0,0,.28); }
+.modal.largo { width: min(1120px, 100%); }
+.modal.medio { width: min(680px, 100%); }
+.modal-cab { padding: 18px 22px 0; }
+.modal-cab h2 { margin: 0; font: 600 21px/1.2 var(--fonte-cond); color: var(--asfalto); }
+.modal-corpo { padding: 10px 22px 6px; }
+.modal-corpo p { margin: 0 0 10px; }
+.modal-corpo h3 { font: 600 16px var(--fonte-cond); margin: 16px 0 6px; color: var(--asfalto); }
+.modal-rodape { padding: 14px 22px 18px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.ajuda { color: var(--texto-2); font-size: 13.5px; }
+.campo { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; color: var(--texto-2); margin-bottom: 12px; }
+.campo input, .campo select, .modal textarea, .tabela input:not([type=checkbox]) {
+  border: 1px solid var(--linha-forte); border-radius: var(--raio); padding: 7px 9px; background: var(--sup); font-weight: 400; font-size: 14px; color: var(--texto);
+}
+.campos-linha { display: flex; gap: 12px; }
+.campos-linha .campo { flex: 1; }
+.check { display: flex; gap: 8px; align-items: center; font-size: 14px; margin-bottom: 10px; }
+.modal textarea { width: 100%; resize: vertical; }
+.linha-acoes { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin: 4px 0 12px; }
+.linha-acoes .campo { margin: 0; }
+.linha-acoes .espaco { flex: 1; }
+.tabela-wrap { max-height: 56vh; overflow: auto; border: 1px solid var(--linha); border-radius: 8px; }
+.tabela { border-collapse: collapse; width: 100%; font-size: 14px; }
+.tabela th { position: sticky; top: 0; background: var(--sup-2); text-align: left; font-size: 12.5px; font-weight: 600; color: var(--texto-2); padding: 7px 8px; border-bottom: 1px solid var(--linha-forte); z-index: 1; vertical-align: bottom; }
+.tabela td { padding: 4px 8px; border-bottom: 1px solid var(--linha); }
+.tabela input:not([type=checkbox]) { width: 100%; padding: 5px 7px; }
+.tabela.cadastro { table-layout: fixed; min-width: 980px; }
+.tabela.cadastro col.c-num { width: 70px; }
+.tabela.cadastro col.c-obs { width: 170px; }
+.tabela.cadastro col.c-ini { width: 160px; }
+.tabela.cadastro col.c-banco { width: 110px; }
+.tabela.cadastro col.c-ciclo { width: 130px; }
+.tabela.cadastro col.c-ativo { width: 56px; }
+.tabela.cadastro col.c-acao { width: 74px; }
+.tabela .centro { text-align: center; }
+.tabela tr.inativo td { opacity: .55; }
+.tabela.ext td:nth-child(3), .tabela.ext td:nth-child(4), .tabela.ext th:nth-child(3), .tabela.ext th:nth-child(4) { text-align: right; font-variant-numeric: tabular-nums; }
+.tabela .pos { color: var(--amarelo-txt); font-weight: 700; }
+.tabela .neg { color: var(--verde); font-weight: 700; }
+.lista-imp { max-height: 300px; overflow: auto; border: 1px solid var(--linha); border-radius: 8px; padding: 4px 0; }
+.lista-imp label { display: grid; grid-template-columns: 22px 34px 1fr auto; gap: 8px; align-items: center; padding: 3px 10px; font-size: 14px; }
+.lista-imp label.existe { color: var(--texto-3); }
+.li-num { color: var(--texto-3); font: 500 13px var(--fonte-cond); }
+.li-obs, .li-tag { font-size: 12px; color: var(--texto-2); background: var(--sup-2); border: 1px solid var(--linha); border-radius: 999px; padding: 0 8px; white-space: nowrap; }
+.resumo-imp { font-size: 14px; }
+.ext-resumo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 4px 0 12px; }
+.ext-resumo div { background: var(--sup-2); border: 1px solid var(--linha); border-radius: 8px; padding: 8px 12px; }
+.ext-resumo span { display: block; font-size: 12.5px; color: var(--texto-2); }
+.ext-resumo b { font: 700 26px/1.1 var(--fonte-cond); color: var(--asfalto); }
+.fer-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+.fer-nav b { font: 600 18px var(--fonte-cond); min-width: 48px; text-align: center; }
+.fer-nav .espaco { flex: 1; }
+.fe-lista { border: 1px solid var(--linha); border-radius: 8px; max-height: 42vh; overflow: auto; }
+.fe-item { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 8px; padding: 5px 10px; border-bottom: 1px solid var(--linha); font-size: 14px; }
+.fe-item.novo { animation: flash 1.8s ease-out; }
+.fe-acoes { display: flex; gap: 2px; flex-wrap: wrap; justify-content: flex-end; }
+.fe-tag {
+  display: inline-block; margin-left: 6px; padding: 0 8px; border-radius: 999px; border: 1px solid var(--linha);
+  background: var(--sup-2); color: var(--texto-2); font: 600 11.5px/1.6 var(--fonte); font-style: normal; white-space: nowrap; vertical-align: 1px;
+}
+.fe-tag.nacional { background: var(--azul-cl); border-color: #BFD1EA; color: var(--azul); }
+.fe-tag.fixo { background: var(--verde-cl); border-color: #A9D8BF; color: var(--verde-esc); }
+.fe-dia { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; margin: 0 0 10px; }
+.fe-dia b { font-size: 17px; color: var(--asfalto); }
+.fe-item:last-child { border-bottom: 0; }
+.fe-data { font: 600 15px var(--fonte-cond); }
+.fe-data small { font: 400 12px var(--fonte); color: var(--texto-3); margin-left: 4px; }
+.fe-novo { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.fe-novo input { border: 1px solid var(--linha-forte); border-radius: var(--raio); padding: 7px 9px; }
+.fe-novo input[type=text] { flex: 1; min-width: 180px; }
+.fe-novo .check { flex-basis: 100%; margin: 0; font-size: 13.5px; color: var(--texto-2); }
+
+/* ---------- Avisos ---------- */
+#toasts { position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%); z-index: 80; display: flex; flex-direction: column; gap: 8px; align-items: center; pointer-events: none; }
+.toast { background: var(--asfalto); color: #fff; padding: 9px 16px; border-radius: 8px; font-size: 14px; box-shadow: 0 8px 24px rgba(0,0,0,.22); max-width: 640px; }
+.toast.erro { background: var(--vermelho); }
+
+@media (max-width: 1100px) {
+  .painel { grid-template-columns: 1fr 1fr; }
+  .painel .bloco:last-child { grid-column: 1 / -1; border-top: 1px solid var(--linha); }
+}
+@media (max-width: 720px) {
+  .painel { grid-template-columns: 1fr; }
+  .bloco { border-right: 0; border-bottom: 1px solid var(--linha); }
+  .topo-in, .barra { padding-left: 16px; padding-right: 16px; }
+  .grade-wrap { margin: 0 16px 24px; }
+  .acoes { margin-left: 0; }
+  :root { --w-nome: 160px; }
+  .ext-resumo { grid-template-columns: 1fr; }
+  .fe-item { grid-template-columns: 64px 1fr; }
+  .fe-acoes { grid-column: 2; justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .grade tr.flash > *, .fe-item.novo { animation: none; }
+}
+@media print {
+  @page { size: A4 landscape; margin: 8mm; }
+  body { background: #fff; font-size: 11px; }
+  .topo { position: static; }
+  .topo::after, .acoes, .status-backup, .comp .seta, .barra, #toasts { display: none !important; }
+  .painel { grid-template-columns: 1fr 1fr 1fr; }
+  .ranking, .alerta-lista { max-height: none; overflow: visible; }
+  .grade-wrap { max-height: none; overflow: visible; border: 0; margin: 0; }
+  .grade .col-nome, .grade .col-banco, .grade .col-ciclo, .grade thead th { position: static; }
+  th.dia, td.cel { width: 24px; min-width: 24px; max-width: 24px; }
+}
+</style>
+</head>
+<body>
+<header class="topo" id="topo">
+  <div class="topo-in">
+    <div class="marca">
+      <b>Controle de Folgas</b>
+      <span id="marca-sub">Motoristas BWA, escala 6x1</span>
+    </div>
+    <div class="comp" role="group" aria-label="Período de apuração">
+      <button type="button" class="seta" id="comp-ant" aria-label="Período anterior">‹</button>
+      <button type="button" class="comp-txt" id="comp-atual" title="Voltar ao período de hoje"><b id="comp-rotulo"></b><span id="comp-datas"></span></button>
+      <button type="button" class="seta" id="comp-prox" aria-label="Próximo período">›</button>
+    </div>
+    <div class="status-backup" id="status-backup" role="status"></div>
+    <nav class="acoes" aria-label="Ações">
+      <button type="button" class="btn" id="bt-motoristas">Motoristas</button>
+      <button type="button" class="btn" id="bt-feriados">Feriados</button>
+      <button type="button" class="btn" id="bt-abrir">Abrir backup</button>
+      <button type="button" class="btn btn-pri" id="bt-salvar">Salvar backup</button>
+    </nav>
+  </div>
+</header>
+
+<section class="painel" aria-label="Resumo">
+  <div class="bloco">
+    <h2>Folgas no banco</h2>
+    <p class="sub" id="sub-banco"></p>
+    <ol class="ranking" id="rank-banco"></ol>
+  </div>
+  <div class="bloco rank-trab">
+    <h2>Dias trabalhados no período</h2>
+    <p class="sub" id="sub-trab"></p>
+    <ol class="ranking" id="rank-trab"></ol>
+  </div>
+  <div class="bloco">
+    <h2>Folga devida</h2>
+    <p class="sub" id="sub-alertas"></p>
+    <div id="alertas"></div>
+  </div>
+</section>
+
+<div class="barra">
+  <input type="search" id="busca" class="busca" placeholder="Buscar motorista" aria-label="Buscar motorista">
+  <button type="button" class="btn" id="bt-intervalo">Lançar intervalo</button>
+  <div class="legenda" aria-label="Legenda">
+    <span>Célula vazia: trabalhou</span>
+    <span><i class="chip c-F">F</i> Folga</span>
+    <span><i class="chip c-FE">FÉ</i> Férias</span>
+    <span><i class="chip c-A">AT</i> Atestado ou afastamento</span>
+    <span><i class="chip c-X">FT</i> Falta</span>
+    <span><i class="lg-fer"></i> Feriado (clique na data do cabeçalho para marcar)</span>
+    <span><b class="lg-mov" style="color:var(--amarelo-txt)">+1</b> entrou no banco</span>
+    <span><b class="lg-mov" style="color:var(--verde)">−1</b> saiu do banco</span>
+    <span>Atalhos na célula: 0 a 4</span>
+  </div>
+</div>
+
+<div class="grade-wrap" id="grade-wrap"><table class="grade" id="grade"></table></div>
+
+<div id="modais"></div>
+<div id="toasts" aria-live="polite"></div>
+<input type="file" id="in-backup" accept=".json,application/json" hidden>
+<input type="file" id="in-import" accept=".xlsx,.csv,.txt" hidden>
+
+<!-- Motor de cálculo: funções puras, sem tela. Também é carregado pelos testes em Node (testes/motor.test.mjs). -->
+<script id="motor">
+(function (raiz) {
+  'use strict';
+
+  const APP_ID = 'controle-folgas-bwa';
+  // Versão do formato do backup. 1: formato original. 2: inclui feriadosFixos (feriados que repetem todo ano).
+  // Backups da versão 1 continuam abrindo: entram sem feriados que repetem.
+  const VERSAO = 2;
+  const DIA_MS = 86400000;
+  const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+  const MESES_LONGOS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  const SEMANA = ['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'];
+  const SEMANA_LONGA = ['domingo', 'segunda-feira', 'terça-feira', 'quarta-feira', 'quinta-feira', 'sexta-feira', 'sábado'];
+  const TIPOS = {
+    T: { nome: 'Trabalhou', sigla: '' },
+    F: { nome: 'Folga', sigla: 'F' },
+    FE: { nome: 'Férias', sigla: 'FÉ' },
+    A: { nome: 'Atestado ou afastamento', sigla: 'AT' },
+    X: { nome: 'Falta', sigla: 'FT' },
+  };
+  const MOTIVO_SETIMO = '7º dia trabalhado';
+
+  // ---------- Datas (sempre 'AAAA-MM-DD', aritmética em UTC) ----------
+  const pad = n => String(n).padStart(2, '0');
+  const iso = (a, m, d) => `${a}-${pad(m)}-${pad(d)}`;
+  const utc = s => Date.UTC(+s.slice(0, 4), +s.slice(5, 7) - 1, +s.slice(8, 10));
+  function deUTC(ms) { const d = new Date(ms); return iso(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate()); }
+  function addDias(s, n) { return deUTC(utc(s) + n * DIA_MS); }
+  function diffDias(a, b) { return Math.round((utc(b) - utc(a)) / DIA_MS); }
+  function diaSemana(s) { return new Date(utc(s)).getUTCDay(); }
+  function ano(s) { return +s.slice(0, 4); }
+  function isoValido(s) { return typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && deUTC(utc(s)) === s; }
+  function isoLocal(d) { d = d || new Date(); return iso(d.getFullYear(), d.getMonth() + 1, d.getDate()); }
+  function fmt(s) { return s ? `${s.slice(8, 10)}/${s.slice(5, 7)}/${s.slice(0, 4)}` : ''; }
+  function fmtCurto(s) { return s ? `${s.slice(8, 10)}/${s.slice(5, 7)}` : ''; }
+  function diasEntre(a, b) { const r = []; for (let d = a; d <= b; d = addDias(d, 1)) r.push(d); return r; }
+
+  // ---------- Período de apuração: dia 26 do mês anterior até dia 25 ----------
+  function competencia(a, m) {
+    const ia = m === 1 ? a - 1 : a;
+    const im = m === 1 ? 12 : m - 1;
+    return {
+      ano: a, mes: m,
+      inicio: iso(ia, im, 26), fim: iso(a, m, 25),
+      rotulo: `${MESES[m - 1]}/${a}`, rotuloLongo: `${MESES_LONGOS[m - 1]} de ${a}`,
+    };
+  }
+  function competenciaDe(s) {
+    let a = ano(s), m = +s.slice(5, 7);
+    if (+s.slice(8, 10) >= 26) { m += 1; if (m > 12) { m = 1; a += 1; } }
+    return competencia(a, m);
+  }
+  function competenciaVizinha(c, delta) {
+    let m = c.mes + delta, a = c.ano;
+    while (m > 12) { m -= 12; a += 1; }
+    while (m < 1) { m += 12; a -= 1; }
+    return competencia(a, m);
+  }
+
+  // ---------- Feriados ----------
+  function pascoa(a) {
+    const g = a % 19, c = Math.floor(a / 100), y = a % 100;
+    const d = Math.floor(c / 4), e = c % 4, f = Math.floor((c + 8) / 25), h0 = Math.floor((c - f + 1) / 3);
+    const h = (19 * g + c - d - h0 + 15) % 30;
+    const i = Math.floor(y / 4), k = y % 4;
+    const l = (32 + 2 * e + 2 * i - h - k) % 7;
+    const m = Math.floor((g + 11 * h + 22 * l) / 451);
+    const mes = Math.floor((h + l - 7 * m + 114) / 31);
+    const dia = ((h + l - 7 * m + 114) % 31) + 1;
+    return iso(a, mes, dia);
+  }
+  function feriadosNacionais(a) {
+    const p = pascoa(a);
+    return {
+      [iso(a, 1, 1)]: 'Confraternização Universal',
+      [addDias(p, -2)]: 'Sexta-feira Santa',
+      [iso(a, 4, 21)]: 'Tiradentes',
+      [iso(a, 5, 1)]: 'Dia do Trabalho',
+      [iso(a, 9, 7)]: 'Independência do Brasil',
+      [iso(a, 10, 12)]: 'Nossa Senhora Aparecida',
+      [iso(a, 11, 2)]: 'Finados',
+      [iso(a, 11, 15)]: 'Proclamação da República',
+      [iso(a, 11, 20)]: 'Dia da Consciência Negra',
+      [iso(a, 12, 25)]: 'Natal',
+    };
+  }
+  function feriadosFacultativos(a) {
+    const p = pascoa(a);
+    return {
+      [addDias(p, -48)]: 'Carnaval (segunda-feira)',
+      [addDias(p, -47)]: 'Carnaval (terça-feira)',
+      [addDias(p, 60)]: 'Corpus Christi',
+    };
+  }
+  // Feriado que repete todo ano na mesma data (municipal ou estadual): { dia: 'MM-DD', nome, desde: AAAA }.
+  // Há no máximo uma regra por dia do ano. Em 29/02, só aparece nos anos bissextos.
+  function dataDaRegra(r, a) { const d = `${a}-${r.dia}`; return isoValido(d) ? d : null; }
+  function diaDoAnoValido(s) { return typeof s === 'string' && /^\d{2}-\d{2}$/.test(s) && isoValido('2024-' + s); }
+  function regraDoDia(est, d) {
+    return (est.feriadosFixos || []).find(r => r.dia === d.slice(5) && r.desde <= ano(d)) || null;
+  }
+
+  // Cadastra os feriados de cada ano uma única vez: primeiro os nacionais, depois os que repetem todo ano.
+  // Nunca sobrescreve um feriado que já está na data. Se o usuário apagar um, ele não volta.
+  function garantirFeriados(est, anos) {
+    est.feriadosFixos = est.feriadosFixos || [];
+    let mudou = false;
+    for (const a of anos) {
+      if (!Number.isInteger(a) || est.feriadosAnos.includes(a)) continue;
+      const f = feriadosNacionais(a);
+      for (const d in f) if (!(d in est.feriados)) est.feriados[d] = f[d];
+      for (const r of est.feriadosFixos) {
+        const d = r.desde <= a && dataDaRegra(r, a);
+        if (d && !(d in est.feriados)) est.feriados[d] = r.nome;
+      }
+      est.feriadosAnos.push(a);
+      mudou = true;
+    }
+    if (mudou) est.feriadosAnos.sort((x, y) => x - y);
+    return mudou;
+  }
+
+  // Marca a data como feriado. Com 'repetir', cria (ou renomeia) a regra daquele dia do ano,
+  // valendo a partir do ano da data, e já aplica nos anos seguintes que estão abertos.
+  function adicionarFeriado(est, d, nome, repetir) {
+    est.feriadosFixos = est.feriadosFixos || [];
+    const anterior = est.feriados[d] || null;
+    est.feriados[d] = nome;
+    if (repetir) {
+      const dia = d.slice(5);
+      const antiga = est.feriadosFixos.find(r => r.dia === dia);
+      const nomeAntigo = antiga ? antiga.nome : null;
+      if (antiga) { antiga.nome = nome; antiga.desde = Math.min(antiga.desde, ano(d)); }
+      else est.feriadosFixos.push({ dia, nome, desde: ano(d) });
+      for (const a of est.feriadosAnos) {
+        const x = a > ano(d) && dataDaRegra({ dia }, a);
+        if (x && (!(x in est.feriados) || est.feriados[x] === nomeAntigo)) est.feriados[x] = nome;
+      }
+    }
+    return { anterior };
+  }
+
+  // Tira o feriado só desta data. A regra de repetir (se houver) continua nos outros anos.
+  function removerFeriado(est, d) {
+    const nome = est.feriados[d] || null;
+    delete est.feriados[d];
+    return nome;
+  }
+
+  // O feriado deixa de repetir depois do ano de 'd'. Esse ano e os anteriores ficam como estão;
+  // nos anos seguintes, sai a data que tinha o mesmo nome. Devolve quantas datas saíram.
+  function pararRepeticao(est, d) {
+    const r = regraDoDia(est, d);
+    if (!r) return 0;
+    for (let a = r.desde; a < ano(d); a++) {
+      const x = dataDaRegra(r, a);
+      if (x && !est.feriadosAnos.includes(a) && !(x in est.feriados)) est.feriados[x] = r.nome;
+    }
+    est.feriadosFixos = est.feriadosFixos.filter(x => x !== r);
+    let removidos = 0;
+    for (const x of Object.keys(est.feriados)) {
+      if (x > d && x.slice(5) === r.dia && est.feriados[x] === r.nome) { delete est.feriados[x]; removidos += 1; }
+    }
+    return removidos;
+  }
+
+  // 'nacional', 'fixo' (repete todo ano), 'avulso' (só naquele ano) ou null (não é feriado).
+  function tipoFeriado(est, d) {
+    const nome = est.feriados[d];
+    if (!nome) return null;
+    const r = regraDoDia(est, d);
+    if (r && r.nome === nome) return 'fixo';
+    if (feriadosNacionais(ano(d))[d] === nome) return 'nacional';
+    return 'avulso';
+  }
+
+  // ---------- Regra do banco de folgas (escala 6x1) ----------
+  // Dia sem lançamento = trabalhou.
+  // Trabalhou no 7º dia do ciclo: +1 no banco e o ciclo recomeça no dia seguinte.
+  // Feriado trabalhado: +1 no banco (soma com o 7º dia, se coincidir).
+  // Folga no 7º dia: folga normal, banco não muda.
+  // Folga fora do 7º dia: usa 1 do banco, se houver saldo (nunca fica negativo).
+  // Folga em feriado, férias e atestado: não usam o banco.
+  // Falta: usa 1 do banco só se o operador escolheu abonar (debitar: true) e houver saldo.
+  // Qualquer dia não trabalhado recomeça a contagem.
+  function calcularMotorista(m, lancamentos, feriados, ate) {
+    lancamentos = lancamentos || {};
+    feriados = feriados || {};
+    let banco = Math.max(0, Math.floor(+m.bancoInicial || 0));
+    let ciclo = Math.min(6, Math.max(0, Math.floor(+m.diasCicloInicial || 0)));
+    const dias = {};
+    const extrato = [];
+    if (banco > 0 && m.inicio) extrato.push({ data: m.inicio, delta: banco, motivo: 'Saldo inicial', saldo: banco });
+    if (!isoValido(m.inicio) || !isoValido(ate) || m.inicio > ate) return { dias, banco, ciclo, extrato };
+
+    for (let d = m.inicio; d <= ate; d = addDias(d, 1)) {
+      const l = lancamentos[d];
+      const tipo = l && TIPOS[l.t] ? l.t : 'T';
+      const feriado = feriados[d] || null;
+      const eventos = [];
+      let posicao = 0, setimo = false, nota = '';
+
+      if (tipo === 'T') {
+        ciclo += 1;
+        posicao = ciclo;
+        if (ciclo === 7) {
+          setimo = true;
+          eventos.push({ delta: 1, motivo: MOTIVO_SETIMO });
+          ciclo = 0;
+        }
+        if (feriado) eventos.push({ delta: 1, motivo: 'Feriado trabalhado: ' + feriado });
+      } else {
+        const noSetimo = ciclo === 6;
+        if (tipo === 'F') {
+          if (feriado) nota = 'Folga em feriado, não usa o banco';
+          else if (noSetimo) nota = 'Folga do 7º dia';
+          else if (banco > 0) eventos.push({ delta: -1, motivo: 'Folga usada do banco' });
+          else nota = 'Folga sem saldo no banco, só recomeça a contagem';
+        } else if (tipo === 'X') {
+          if (l.debitar && banco > 0) eventos.push({ delta: -1, motivo: 'Falta abonada com folga do banco' });
+          else nota = l.debitar ? 'Falta sem saldo para abonar' : 'Falta não abonada';
+        }
+        ciclo = 0;
+      }
+
+      for (const e of eventos) {
+        banco += e.delta;
+        extrato.push({ data: d, delta: e.delta, motivo: e.motivo, saldo: banco });
+      }
+      dias[d] = { tipo, feriado, posicao, setimo, ciclo, banco, eventos, nota };
+    }
+    return { dias, banco, ciclo, extrato };
+  }
+
+  function resumoPeriodo(calc, comp, hoje) {
+    const r = { dias: 0, trabalhados: 0, folgas: 0, ferias: 0, atestados: 0, faltas: 0, ganhas: 0, usadas: 0 };
+    const campo = { T: 'trabalhados', F: 'folgas', FE: 'ferias', A: 'atestados', X: 'faltas' };
+    const fim = comp.fim < hoje ? comp.fim : hoje;
+    for (let d = comp.inicio; d <= fim; d = addDias(d, 1)) {
+      const dia = calc.dias[d];
+      if (!dia) continue;
+      r.dias += 1;
+      r[campo[dia.tipo]] += 1;
+      for (const e of dia.eventos) { if (e.delta > 0) r.ganhas += e.delta; else r.usadas -= e.delta; }
+    }
+    return r;
+  }
+
+  // 'hoje' = hoje é o 7º dia (contado como trabalhado); 'amanha' = 6 dias seguidos até hoje.
+  function statusHoje(calc, hoje) {
+    const dia = calc.dias[hoje];
+    if (!dia) return null;
+    if (dia.setimo) return 'hoje';
+    if (dia.ciclo === 6) return 'amanha';
+    return null;
+  }
+
+  // ---------- Dados e backup ----------
+  function estadoVazio() {
+    return { app: APP_ID, versao: VERSAO, atualizadoEm: null, motoristas: [], lancamentos: {}, feriados: {}, feriadosAnos: [], feriadosFixos: [] };
+  }
+  function inteiro(v, min, max) { const n = Math.floor(Number(v)); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : min; }
+  function validarBackup(obj) {
+    if (!obj || typeof obj !== 'object') return { ok: false, erro: 'O arquivo está vazio ou não é um backup.' };
+    if (obj.app !== APP_ID) return { ok: false, erro: 'Este arquivo não é um backup do Controle de Folgas.' };
+    if (typeof obj.versao !== 'number') return { ok: false, erro: 'O backup não informa a versão. O arquivo pode estar corrompido.' };
+    if (obj.versao > VERSAO) return { ok: false, erro: 'Este backup foi gerado por uma versão mais nova do sistema. Use o arquivo HTML mais recente.' };
+    if (!Array.isArray(obj.motoristas)) return { ok: false, erro: 'O backup não tem a lista de motoristas.' };
+    const est = estadoVazio();
+    est.atualizadoEm = typeof obj.atualizadoEm === 'string' ? obj.atualizadoEm : null;
+    const ids = new Set();
+    for (const m of obj.motoristas) {
+      if (!m || !m.id || !m.nome || ids.has(String(m.id))) continue;
+      ids.add(String(m.id));
+      est.motoristas.push({
+        id: String(m.id),
+        numero: m.numero ? String(m.numero) : '',
+        nome: String(m.nome),
+        obs: m.obs ? String(m.obs) : '',
+        ativo: m.ativo !== false,
+        inicio: isoValido(m.inicio) ? m.inicio : null,
+        bancoInicial: inteiro(m.bancoInicial, 0, 9999),
+        diasCicloInicial: inteiro(m.diasCicloInicial, 0, 6),
+      });
+    }
+    const lanc = obj.lancamentos && typeof obj.lancamentos === 'object' ? obj.lancamentos : {};
+    for (const id of ids) {
+      const origem = lanc[id];
+      if (!origem || typeof origem !== 'object') continue;
+      const destino = {};
+      for (const d in origem) {
+        const l = origem[d];
+        if (!isoValido(d) || !l || !TIPOS[l.t] || l.t === 'T') continue;
+        destino[d] = l.t === 'X' ? { t: 'X', debitar: !!l.debitar } : { t: l.t };
+      }
+      if (Object.keys(destino).length) est.lancamentos[id] = destino;
+    }
+    if (obj.feriados && typeof obj.feriados === 'object') {
+      for (const d in obj.feriados) if (isoValido(d) && obj.feriados[d]) est.feriados[d] = String(obj.feriados[d]);
+    }
+    if (Array.isArray(obj.feriadosAnos)) est.feriadosAnos = obj.feriadosAnos.filter(Number.isInteger).sort((x, y) => x - y);
+    if (Array.isArray(obj.feriadosFixos)) {
+      const dias = new Set();
+      for (const r of obj.feriadosFixos) {
+        if (!r || !diaDoAnoValido(r.dia) || !r.nome || !String(r.nome).trim() || !Number.isInteger(r.desde) || dias.has(r.dia)) continue;
+        dias.add(r.dia);
+        est.feriadosFixos.push({ dia: r.dia, nome: String(r.nome).trim(), desde: r.desde });
+      }
+    }
+    return { ok: true, estado: est };
+  }
+  function nomeArquivoBackup(d) {
+    d = d || new Date();
+    return `folgas-bwa_${isoLocal(d)}_${pad(d.getHours())}${pad(d.getMinutes())}.json`;
+  }
+  let contadorId = 0;
+  function novoId() { contadorId += 1; return 'm' + Date.now().toString(36) + contadorId.toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  // ---------- Nomes (importação da lista de motoristas) ----------
+  const PARTICULAS = new Set(['da', 'de', 'do', 'das', 'dos', 'e', 'di', 'du']);
+  function normalizarNome(s) {
+    return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim().toUpperCase();
+  }
+  function tituloNome(s) {
+    return String(s).toLowerCase().split(' ').filter(Boolean)
+      .map((p, i) => (i > 0 && PARTICULAS.has(p)) ? p : p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+  }
+  function separarNomeObs(bruto) {
+    const s = String(bruto).replace(/\s+/g, ' ').trim();
+    const partes = s.split(/\s+[-–—]\s+/);
+    let obs = partes.slice(1).join(' - ').trim();
+    if (obs && obs === obs.toUpperCase()) obs = obs.charAt(0) + obs.slice(1).toLowerCase();
+    return { nome: tituloNome(partes[0]), obs };
+  }
+  function pareceNome(v) {
+    const s = String(v == null ? '' : v).replace(/\s+/g, ' ').trim();
+    if (s.length < 5 || s.length > 90) return false;
+    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ'´`.\s\-–—]+$/.test(s)) return false;
+    return s.split(' ').filter(p => /[A-Za-zÀ-ÖØ-öø-ÿ]{2,}/.test(p)).length >= 2;
+  }
+  // Recebe linhas (array de arrays de texto) e acha a coluna com mais nomes diferentes.
+  function extrairNomes(linhas) {
+    const porColuna = {};
+    linhas.forEach(l => (l || []).forEach((v, ci) => {
+      if (pareceNome(v)) (porColuna[ci] = porColuna[ci] || new Set()).add(normalizarNome(v));
+    }));
+    let coluna = -1, max = 0;
+    for (const ci in porColuna) if (porColuna[ci].size > max) { max = porColuna[ci].size; coluna = +ci; }
+    if (coluna < 0) return { coluna, itens: [] };
+    const vistos = new Set();
+    const itens = [];
+    for (const l of linhas) {
+      const v = l && l[coluna];
+      if (!pareceNome(v)) continue;
+      const { nome, obs } = separarNomeObs(v);
+      const chave = normalizarNome(nome);
+      if (vistos.has(chave)) continue;
+      vistos.add(chave);
+      const n = String(coluna > 0 && l[coluna - 1] != null ? l[coluna - 1] : '').trim();
+      itens.push({ nome, obs, numero: /^\d{1,5}$/.test(n) ? n : '' });
+    }
+    return { coluna, itens };
+  }
+  function linhasDeTexto(txt) {
+    return String(txt || '').split(/\r?\n/).map(l => l.split(/[;\t]/).map(c => c.replace(/^"|"$/g, '').trim()));
+  }
+
+  const Motor = {
+    APP_ID, VERSAO, TIPOS, MESES, SEMANA, SEMANA_LONGA, MOTIVO_SETIMO,
+    iso, addDias, diffDias, diaSemana, ano, isoValido, isoLocal, fmt, fmtCurto, diasEntre,
+    competencia, competenciaDe, competenciaVizinha,
+    pascoa, feriadosNacionais, feriadosFacultativos, garantirFeriados,
+    adicionarFeriado, removerFeriado, pararRepeticao, tipoFeriado,
+    calcularMotorista, resumoPeriodo, statusHoje,
+    estadoVazio, validarBackup, nomeArquivoBackup, novoId,
+    normalizarNome, tituloNome, separarNomeObs, pareceNome, extrairNomes, linhasDeTexto,
+  };
+  if (typeof module === 'object' && module && module.exports) module.exports = Motor;
+  else raiz.Motor = Motor;
+})(typeof window !== 'undefined' ? window : globalThis);
+</script>
+
+<!-- Leitor de planilhas .xlsx sem bibliotecas externas (o .xlsx é um .zip de arquivos XML). -->
+<script id="xlsx">
+(function () {
+  'use strict';
+  async function abrirZip(buf) {
+    const dv = new DataView(buf);
+    const u8 = new Uint8Array(buf);
+    let fimDir = -1;
+    for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) {
+      if (dv.getUint32(i, true) === 0x06054b50) { fimDir = i; break; }
+    }
+    if (fimDir < 0) throw new Error('O arquivo não é uma planilha .xlsx válida.');
+    const total = dv.getUint16(fimDir + 10, true);
+    let p = dv.getUint32(fimDir + 16, true);
+    const dec = new TextDecoder();
+    const entradas = {};
+    for (let n = 0; n < total; n++) {
+      if (dv.getUint32(p, true) !== 0x02014b50) break;
+      const metodo = dv.getUint16(p + 10, true);
+      const tamanho = dv.getUint32(p + 20, true);
+      const lenNome = dv.getUint16(p + 28, true), lenExtra = dv.getUint16(p + 30, true), lenComent = dv.getUint16(p + 32, true);
+      const local = dv.getUint32(p + 42, true);
+      entradas[dec.decode(u8.subarray(p + 46, p + 46 + lenNome))] = { metodo, tamanho, local };
+      p += 46 + lenNome + lenExtra + lenComent;
+    }
+    return async function ler(nome) {
+      const e = entradas[nome];
+      if (!e) return null;
+      const ini = e.local + 30 + dv.getUint16(e.local + 26, true) + dv.getUint16(e.local + 28, true);
+      const dados = u8.subarray(ini, ini + e.tamanho);
+      if (e.metodo === 0) return dec.decode(dados);
+      if (e.metodo === 8) {
+        const fluxo = new Blob([dados]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        return await new Response(fluxo).text();
+      }
+      throw new Error('Compressão não suportada na planilha.');
+    };
+  }
+  function indiceColuna(letras) {
+    let n = 0;
+    for (const ch of letras) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return n - 1;
+  }
+  async function lerXlsx(buf) {
+    const ler = await abrirZip(buf);
+    const xml = s => new DOMParser().parseFromString(s, 'application/xml');
+    const tags = (doc, n) => Array.from(doc.getElementsByTagNameNS('*', n));
+    const wbTxt = await ler('xl/workbook.xml');
+    if (!wbTxt) throw new Error('O arquivo não é uma planilha .xlsx válida.');
+    const wb = xml(wbTxt);
+    const rels = xml(await ler('xl/_rels/workbook.xml.rels') || '<r/>');
+    const alvo = {};
+    tags(rels, 'Relationship').forEach(r => { alvo[r.getAttribute('Id')] = r.getAttribute('Target'); });
+    const ssTxt = await ler('xl/sharedStrings.xml');
+    const textos = ssTxt ? tags(xml(ssTxt), 'si').map(si => tags(si, 't').map(t => t.textContent).join('')) : [];
+    const abas = [];
+    for (const s of tags(wb, 'sheet')) {
+      const rid = s.getAttribute('r:id') || s.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+      let caminho = alvo[rid];
+      if (!caminho) continue;
+      caminho = caminho.startsWith('/') ? caminho.slice(1) : 'xl/' + caminho;
+      const txt = await ler(caminho);
+      if (!txt) continue;
+      const linhas = [];
+      for (const row of tags(xml(txt), 'row')) {
+        const linha = [];
+        for (const c of tags(row, 'c')) {
+          const ref = (c.getAttribute('r') || '').replace(/\d+/g, '');
+          const col = ref ? indiceColuna(ref) : linha.length;
+          const tipo = c.getAttribute('t');
+          let v = '';
+          if (tipo === 'inlineStr') v = tags(c, 't').map(x => x.textContent).join('');
+          else {
+            const ve = tags(c, 'v')[0];
+            if (ve) v = tipo === 's' ? (textos[+ve.textContent] || '') : ve.textContent;
+          }
+          linha[col] = v;
+        }
+        linhas.push(linha);
+      }
+      abas.push({ nome: s.getAttribute('name'), linhas });
+    }
+    return abas;
+  }
+  window.LeitorXlsx = { lerXlsx };
+})();
+</script>
+
+<script id="app">
+(function () {
+  'use strict';
+  const M = window.Motor;
+  const $ = (s, el) => (el || document).querySelector(s);
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const plural = (n, um, varios) => `${n} ${n === 1 ? um : varios}`;
+
+  const CH_ESTADO = 'bwa-folgas:estado';
+  const CH_BACKUP = 'bwa-folgas:backup';
+  const params = new URLSearchParams(location.search);
+  const HOJE = M.isoValido(params.get('hoje')) ? params.get('hoje') : M.isoLocal(new Date());
+  const DATA_SIMULADA = M.isoValido(params.get('hoje'));
+  const MODO_TESTE = params.has('teste');
+
+  const OPCOES = [
+    { t: 'T', nome: 'Trabalhou', tecla: '0' },
+    { t: 'F', nome: 'Folga', tecla: '1' },
+    { t: 'FE', nome: 'Férias', tecla: '2' },
+    { t: 'A', nome: 'Atestado ou afastamento', tecla: '3' },
+    { t: 'X', nome: 'Falta', tecla: '4' },
+  ];
+
+  let estado = M.estadoVazio();
+  let infoBackup = null;      // { versao: atualizadoEm salvo, em: quando salvou }
+  let comp = M.competenciaDe(HOJE);
+  let filtro = '';
+  let calc = {};
+  let celFoco = null;         // { id, d }
+  let focarAposRender = false;
+  let rolarParaHoje = true;
+  let menuAberto = null;
+  let importacaoAtual = null;
+
+  // ---------- Armazenamento no navegador ----------
+  function lerLS(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function gravarLS(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+  function carregarLocal() {
+    const bruto = lerLS(CH_ESTADO);
+    if (bruto) {
+      try { const r = M.validarBackup(JSON.parse(bruto)); if (r.ok) estado = r.estado; } catch (e) { /* dados locais ilegíveis: começa vazio */ }
+    }
+    try { infoBackup = JSON.parse(lerLS(CH_BACKUP) || 'null'); } catch (e) { infoBackup = null; }
+  }
+  function persistir() {
+    if (!gravarLS(CH_ESTADO, JSON.stringify(estado))) toast('O navegador não deixou guardar os dados. Salve o backup agora para não perder o que foi lançado.', 'erro');
+  }
+  function marcarBackup() {
+    infoBackup = { versao: estado.atualizadoEm, em: new Date().toISOString() };
+    gravarLS(CH_BACKUP, JSON.stringify(infoBackup));
+  }
+  function temDados() { return estado.motoristas.length > 0; }
+  function pendente() { return !!estado.atualizadoEm && (!infoBackup || infoBackup.versao !== estado.atualizadoEm); }
+
+  function alterar(fn) {
+    fn(estado);
+    estado.atualizadoEm = new Date().toISOString();
+    persistir();
+    recalcular();
+    renderizar();
+  }
+
+  // ---------- Cálculo ----------
+  function motorista(id) { return estado.motoristas.find(m => m.id === id); }
+  function motoristasAtivos() {
+    return estado.motoristas.filter(m => m.ativo !== false).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  }
+  function recalcular() {
+    const anos = new Set([M.ano(HOJE), M.ano(HOJE) + 1, comp.ano, M.ano(comp.inicio)]);
+    for (const m of estado.motoristas) if (m.inicio) for (let a = M.ano(m.inicio); a <= M.ano(HOJE); a++) anos.add(a);
+    M.garantirFeriados(estado, [...anos]);
+    calc = {};
+    for (const m of estado.motoristas) calc[m.id] = M.calcularMotorista(m, estado.lancamentos[m.id], estado.feriados, HOJE);
+  }
+  function bancoAntesDe(id, d) {
+    const m = motorista(id), c = calc[id];
+    if (!m.inicio || d <= m.inicio) return m.bancoInicial || 0;
+    const anterior = c.dias[M.addDias(d, -1)];
+    return anterior ? anterior.banco : c.banco;
+  }
+
+  // ---------- Renderização ----------
+  function renderizar() {
+    renderTopo();
+    renderPainel();
+    renderGrade();
+  }
+
+  function fmtDataHora(isoTxt, comSegundos) {
+    const d = new Date(isoTxt);
+    if (isNaN(d)) return '';
+    const p = n => String(n).padStart(2, '0');
+    return `${M.fmt(M.isoLocal(d))} às ${p(d.getHours())}:${p(d.getMinutes())}${comSegundos ? ':' + p(d.getSeconds()) : ''}`;
+  }
+
+  function renderTopo() {
+    $('#comp-rotulo').textContent = comp.rotulo;
+    $('#comp-datas').textContent = `${M.fmt(comp.inicio)} a ${M.fmt(comp.fim)}`;
+    $('#marca-sub').innerHTML = DATA_SIMULADA
+      ? `<span class="simulado">Data simulada: ${M.fmt(HOJE)}</span>`
+      : 'Motoristas BWA, escala 6x1';
+    const st = $('#status-backup');
+    if (!temDados() && !estado.atualizadoEm) {
+      st.className = 'status-backup';
+      st.innerHTML = '<i></i><span>Sem dados neste navegador</span>';
+      st.title = '';
+    } else if (pendente()) {
+      st.className = 'status-backup pend';
+      st.innerHTML = '<i></i><span>Alterações não salvas no backup</span>';
+      st.title = 'Clique em "Salvar backup" antes de fechar o navegador.';
+    } else {
+      st.className = 'status-backup ok';
+      st.innerHTML = `<i></i><span>Backup em dia${infoBackup && infoBackup.em ? ` (${fmtDataHora(infoBackup.em)})` : ''}</span>`;
+      st.title = '';
+    }
+  }
+
+  function listaRanking(itens) {
+    if (!itens.length) return '<li><p class="vazio">Nenhum motorista cadastrado.</p></li>';
+    const max = Math.max(1, ...itens.map(i => i.v));
+    return itens.map((it, i) => `<li><button type="button" class="rank-item${it.v ? '' : ' zero'}" data-ir="${it.m.id}" title="${esc(it.m.nome)}">` +
+      `<span class="rank-pos">${i + 1}</span><span class="rank-nome">${esc(it.m.nome)}</span>` +
+      `<span class="rank-barra"><i style="width:${(it.v / max * 100).toFixed(1)}%"></i></span>` +
+      `<span class="rank-valor">${it.v}</span></button></li>`).join('');
+  }
+
+  function renderPainel() {
+    const ativos = motoristasAtivos();
+    const porNome = (a, b) => b.v - a.v || a.m.nome.localeCompare(b.m.nome, 'pt-BR');
+    const banco = ativos.map(m => ({ m, v: calc[m.id].banco })).sort(porNome);
+    const trab = ativos.map(m => ({ m, v: M.resumoPeriodo(calc[m.id], comp, HOJE).trabalhados })).sort(porNome);
+    const total = banco.reduce((s, i) => s + i.v, 0);
+    $('#sub-banco').textContent = ativos.length ? `Saldo de hoje, ${M.fmtCurto(HOJE)}. Total acumulado: ${plural(total, 'folga', 'folgas')}.` : 'Saldo de hoje.';
+    $('#rank-banco').innerHTML = listaRanking(banco);
+    $('#sub-trab').textContent = comp.inicio > HOJE ? `${comp.rotulo} ainda não começou.`
+      : comp.fim < HOJE ? `${comp.rotulo}, período fechado (${M.fmtCurto(comp.inicio)} a ${M.fmtCurto(comp.fim)}).`
+      : `${comp.rotulo}, de ${M.fmtCurto(comp.inicio)} até hoje.`;
+    $('#rank-trab').innerHTML = listaRanking(trab);
+
+    const hoje = ativos.filter(m => M.statusHoje(calc[m.id], HOJE) === 'hoje');
+    const amanha = ativos.filter(m => M.statusHoje(calc[m.id], HOJE) === 'amanha');
+    $('#sub-alertas').textContent = `Pela contagem de hoje, ${M.fmtCurto(HOJE)}.`;
+    const grupo = (cls, titulo, dica, lista) => `<div class="alerta-grupo ${cls}"><h3><i></i>${titulo} <span class="qtd">${lista.length}</span></h3>` +
+      (lista.length
+        ? `<p class="dica">${dica}</p><div class="alerta-lista">${lista.map(m => `<button type="button" data-ir="${m.id}">${esc(m.nome)}</button>`).join('')}</div>`
+        : '<p class="vazio">Nenhum motorista.</p>') + '</div>';
+    $('#alertas').innerHTML =
+      grupo('al-hoje', 'Hoje é o 7º dia', 'Marque a folga de hoje. Se trabalharem, cada um ganha +1 no banco.', hoje) +
+      grupo('al-amanha', 'Amanhã é o 7º dia', 'Trabalharam 6 dias seguidos até hoje.', amanha);
+  }
+
+  const ARCOS = (() => {
+    const r = 10, c = 13, n = 7, folga = 7;
+    const ponto = a => [(c + r * Math.cos(a * Math.PI / 180)).toFixed(2), (c + r * Math.sin(a * Math.PI / 180)).toFixed(2)];
+    return Array.from({ length: n }, (_, i) => {
+      const [x0, y0] = ponto(-90 + i * 360 / n + folga / 2);
+      const [x1, y1] = ponto(-90 + (i + 1) * 360 / n - folga / 2);
+      return `M${x0} ${y0}A${r} ${r} 0 0 1 ${x1} ${y1}`;
+    });
+  })();
+  function anel(ciclo, status) {
+    const arcos = ARCOS.map((d, i) => `<path class="${i < ciclo ? 'on' : i === 6 ? 'folga' : 'off'}" d="${d}"/>`).join('');
+    let txt;
+    if (status === 'hoje') txt = '<b>Folga hoje</b><small>é o 7º dia</small>';
+    else if (status === 'amanha') txt = '<b>6 dias</b><small>folga amanhã</small>';
+    else txt = `<b>${plural(ciclo, 'dia', 'dias')}</b><small>seguidos</small>`;
+    return `<span class="anel ${status || ''}" title="Contagem do ciclo de 7 dias: ${ciclo} de 6 dias trabalhados"><svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true">${arcos}</svg><span class="anel-txt">${txt}</span></span>`;
+  }
+
+  function chip(t) { return `<i class="chip c-${t}">${M.TIPOS[t].sigla}</i>`; }
+
+  function celula(m, c, d) {
+    const fer = estado.feriados[d];
+    const lanc = (estado.lancamentos[m.id] || {})[d];
+    const cls = ['cel'];
+    if (fer) cls.push('fer');
+    if (d === HOJE) cls.push('hoje');
+    if (d.endsWith('-01')) cls.push('mes');
+    let titulo = `${M.SEMANA_LONGA[M.diaSemana(d)]}, ${M.fmt(d)}${fer ? ` (feriado: ${fer})` : ''}`;
+    let conteudo = '';
+    if (!m.inicio || d < m.inicio) {
+      cls.push('antes');
+      titulo += '. Antes do início do controle deste motorista.';
+      return `<td class="${cls.join(' ')}" data-d="${d}" title="${esc(titulo)}"></td>`;
+    }
+    if (d > HOJE) {
+      cls.push('futuro');
+      if (lanc) { conteudo = chip(lanc.t); titulo += `. ${M.TIPOS[lanc.t].nome} programada.`; }
+      else titulo += '. Dia futuro.';
+    } else {
+      const dia = c.dias[d];
+      if (dia.tipo !== 'T') conteudo = chip(dia.tipo);
+      if (dia.setimo) { cls.push('setimo'); conteudo = '<span class="sete">7º</span>'; }
+      const delta = dia.eventos.reduce((s, e) => s + e.delta, 0);
+      if (delta) conteudo += `<span class="mov ${delta > 0 ? 'mais' : 'menos'}">${delta > 0 ? '+' : '−'}${Math.abs(delta)}</span>`;
+      titulo += `. ${M.TIPOS[dia.tipo].nome}`;
+      if (dia.tipo === 'T' && dia.posicao) titulo += ` (${dia.posicao}º dia do ciclo)`;
+      if (dia.eventos.length) titulo += '. ' + dia.eventos.map(e => `${e.motivo}: ${e.delta > 0 ? '+' : '−'}${Math.abs(e.delta)}`).join('. ');
+      if (dia.nota) titulo += '. ' + dia.nota;
+      titulo += `. Banco: ${dia.banco}.`;
+    }
+    return `<td class="${cls.join(' ')}" data-d="${d}" tabindex="-1" title="${esc(titulo)}" aria-label="${esc(titulo)}">${conteudo}</td>`;
+  }
+
+  function renderGrade() {
+    const grade = $('#grade');
+    const tinhaFoco = focarAposRender || grade.contains(document.activeElement);
+    focarAposRender = false;
+    if (!temDados()) {
+      grade.innerHTML = `<tbody><tr><td><div class="grade-vazia"><h2>Nenhum motorista cadastrado</h2>` +
+        `<p>Se você já usa o controle, abra o último arquivo de backup. Se é a primeira vez, importe a planilha com a lista de motoristas.</p>` +
+        `<button type="button" class="btn btn-pri" data-acao="importar">Importar motoristas</button><button type="button" class="btn" data-acao="abrir">Abrir backup</button></div></td></tr></tbody>`;
+      return;
+    }
+    const dias = M.diasEntre(comp.inicio, comp.fim);
+    const lista = motoristasAtivos().filter(m => !filtro || M.normalizarNome(m.nome).includes(filtro));
+    let html = '<thead><tr><th class="col-nome" scope="col">Motorista</th><th class="col-banco" scope="col">Banco</th><th class="col-ciclo" scope="col">Dias seguidos hoje</th>';
+    for (const d of dias) {
+      const ds = M.diaSemana(d), fer = estado.feriados[d];
+      const cls = ['dia'];
+      if (ds === 0) cls.push('dom');
+      if (fer) cls.push('fer');
+      if (d === HOJE) cls.push('hoje');
+      if (d.endsWith('-01')) cls.push('mes');
+      const dica = M.SEMANA_LONGA[ds] + ', ' + M.fmt(d) + (fer ? '. Feriado: ' + fer + '. Clique para ver ou tirar o feriado.' : '. Clique para marcar como feriado.');
+      html += `<th class="${cls.join(' ')}" scope="col" title="${esc(dica)}"><button type="button" class="dia-bt" data-dia="${d}" tabindex="-1" aria-label="${esc(dica)}"><span class="sem">${M.SEMANA[ds]}</span><span class="num">${d.slice(8)}</span></button></th>`;
+    }
+    html += `<th class="col-trab" scope="col" title="Dias trabalhados em ${comp.rotulo}">Trab.</th></tr></thead><tbody>`;
+    if (!lista.length) {
+      html += `<tr><td colspan="${dias.length + 4}"><p class="vazio" style="padding:18px 12px">Nenhum motorista encontrado com esse nome.</p></td></tr>`;
+    }
+    for (const m of lista) {
+      const c = calc[m.id];
+      const st = M.statusHoje(c, HOJE);
+      const r = M.resumoPeriodo(c, comp, HOJE);
+      html += `<tr data-id="${m.id}"><th class="col-nome" scope="row"><button type="button" class="nome" data-extrato="${m.id}" title="Ver extrato de ${esc(m.nome)}">${esc(m.nome)}</button>${m.obs ? `<span class="obs">${esc(m.obs)}</span>` : ''}</th>` +
+        `<td class="col-banco${c.banco ? '' : ' zero'}" title="Folgas no banco hoje">${c.banco}</td><td class="col-ciclo">${anel(c.ciclo, st)}</td>`;
+      for (const d of dias) html += celula(m, c, d);
+      html += `<td class="col-trab">${r.trabalhados}</td></tr>`;
+    }
+    html += '</tbody>';
+    grade.innerHTML = html;
+
+    let alvo = celFoco && grade.querySelector(`tr[data-id="${celFoco.id}"] td.cel[data-d="${celFoco.d}"]`);
+    if (!alvo) alvo = grade.querySelector('td.cel[tabindex]');
+    if (alvo) {
+      alvo.tabIndex = 0;
+      if (tinhaFoco) alvo.focus({ preventScroll: true });
+    }
+    if (rolarParaHoje) {
+      rolarParaHoje = false;
+      const th = grade.querySelector('th.dia.hoje');
+      const wrap = $('#grade-wrap');
+      const fixas = grade.querySelector('thead .col-ciclo');
+      wrap.scrollLeft = th && fixas ? Math.max(0, th.offsetLeft - (fixas.offsetLeft + fixas.offsetWidth) - 36 * 8) : 0;
+    }
+  }
+
+  // ---------- Grade: clique e teclado ----------
+  function focarCel(td) {
+    $('#grade').querySelectorAll('td.cel[tabindex="0"]').forEach(x => { x.tabIndex = -1; });
+    td.tabIndex = 0;
+    td.focus();
+    celFoco = { id: td.parentElement.dataset.id, d: td.dataset.d };
+  }
+
+  function definirTipo(id, d, t) {
+    celFoco = { id, d };
+    focarAposRender = true;
+    if (t === 'X') return perguntarFalta(id, d);
+    alterar(s => {
+      const l = s.lancamentos[id] || (s.lancamentos[id] = {});
+      if (t === 'T') delete l[d]; else l[d] = { t };
+      if (!Object.keys(l).length) delete s.lancamentos[id];
+    });
+  }
+
+  function perguntarFalta(id, d) {
+    const m = motorista(id);
+    const saldo = d > HOJE ? calc[id].banco : bancoAntesDe(id, d);
+    const gravar = debitar => {
+      focarAposRender = true;
+      alterar(s => { (s.lancamentos[id] || (s.lancamentos[id] = {}))[d] = { t: 'X', debitar }; });
+    };
+    if (saldo <= 0) {
+      gravar(false);
+      toast(`Falta registrada. ${m.nome} não tem folgas no banco para abonar.`);
+      return;
+    }
+    modal({
+      titulo: 'Abonar a falta com o banco?',
+      corpo: `<p>${esc(m.nome)} tem <b>${plural(saldo, 'folga', 'folgas')}</b> no banco em ${M.fmt(d)}.</p><p>Quer usar 1 folga do banco para abonar esta falta?</p>`,
+      botoes: [
+        { texto: 'Só registrar a falta', acao: () => gravar(false) },
+        { texto: 'Usar 1 folga do banco', classe: 'btn-pri', acao: () => gravar(true) },
+      ],
+    });
+  }
+
+  function abrirMenu(td) {
+    fecharMenu();
+    const id = td.parentElement.dataset.id, d = td.dataset.d;
+    const m = motorista(id);
+    focarCel(td);
+    const atual = ((estado.lancamentos[id] || {})[d] || { t: 'T' }).t;
+    const dia = calc[id].dias[d];
+    const fer = estado.feriados[d];
+    let info = '';
+    if (dia) {
+      const partes = dia.eventos.map(e => `${e.motivo} (${e.delta > 0 ? '+' : '−'}${Math.abs(e.delta)})`);
+      if (dia.nota) partes.push(dia.nota);
+      if (dia.tipo === 'T' && dia.posicao) partes.unshift(`${dia.posicao}º dia do ciclo`);
+      partes.push(`banco: ${dia.banco}`);
+      info = `<div class="sep"></div><div class="menu-info">${esc(partes.join('. '))}.</div>`;
+    } else if (d > HOJE) {
+      info = '<div class="sep"></div><div class="menu-info">Dia futuro: o lançamento fica programado e entra na conta quando a data chegar.</div>';
+    }
+    const el = document.createElement('div');
+    el.className = 'menu';
+    el.setAttribute('role', 'menu');
+    el.innerHTML = `<div class="menu-cab"><b>${esc(m.nome)}</b><span>${M.SEMANA_LONGA[M.diaSemana(d)]}, ${M.fmt(d)}${fer ? `. Feriado: ${esc(fer)}` : ''}</span></div>` +
+      OPCOES.map(o => `<button type="button" role="menuitem" data-tipo="${o.t}" class="${o.t === atual ? 'atual' : ''}">${o.t === 'T' ? '<i class="chip c-T"></i>' : chip(o.t)}<span>${o.nome}</span><kbd>${o.tecla}</kbd></button>`).join('') +
+      `<div class="sep"></div><button type="button" role="menuitem" data-intervalo>Lançar vários dias a partir deste</button>` + info;
+    document.body.appendChild(el);
+    const r = td.getBoundingClientRect();
+    const w = el.offsetWidth, h = el.offsetHeight;
+    let left = r.right + 6;
+    if (left + w > innerWidth - 8) left = Math.max(8, r.left - w - 6);
+    let top = r.top;
+    if (top + h > innerHeight - 8) top = Math.max(8, innerHeight - h - 8);
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    menuAberto = { el, td, id, d };
+    (el.querySelector('button.atual') || el.querySelector('button')).focus();
+
+    el.addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      fecharMenu();
+      if (b.hasAttribute('data-intervalo')) abrirIntervalo(id, d);
+      else definirTipo(id, d, b.dataset.tipo);
+    });
+    el.addEventListener('keydown', e => {
+      const botoes = [...el.querySelectorAll('button')];
+      const i = botoes.indexOf(document.activeElement);
+      if (e.key === 'ArrowDown') { e.preventDefault(); botoes[(i + 1) % botoes.length].focus(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); botoes[(i - 1 + botoes.length) % botoes.length].focus(); }
+      else if (e.key === 'Escape' || e.key === 'Tab') { e.preventDefault(); fecharMenu(); focarCel(td); }
+      else {
+        const op = OPCOES.find(o => o.tecla === e.key);
+        if (op) { e.preventDefault(); fecharMenu(); definirTipo(id, d, op.t); }
+      }
+    });
+  }
+  function fecharMenu() {
+    if (menuAberto) { menuAberto.el.remove(); menuAberto = null; }
+  }
+
+  function irPara(id) {
+    if (filtro && !motoristasAtivos().some(m => m.id === id && M.normalizarNome(m.nome).includes(filtro))) {
+      filtro = '';
+      $('#busca').value = '';
+      renderGrade();
+    }
+    const tr = $(`#grade tr[data-id="${id}"]`);
+    if (!tr) return;
+    const wrap = $('#grade-wrap');
+    $('#grade-wrap').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    wrap.scrollTop = Math.max(0, tr.offsetTop - wrap.clientHeight / 2);
+    tr.classList.remove('flash');
+    void tr.offsetWidth;
+    tr.classList.add('flash');
+    setTimeout(() => tr.classList.remove('flash'), 2000);
+  }
+
+  // ---------- Modais ----------
+  function modal({ titulo, corpo, botoes = [], largo = false, medio = false, aoAbrir, aoFechar, fecharFora = true }) {
+    fecharMenu();
+    const fundo = document.createElement('div');
+    fundo.className = 'modal-fundo';
+    fundo.innerHTML = `<div class="modal${largo ? ' largo' : medio ? ' medio' : ''}" role="dialog" aria-modal="true" aria-label="${esc(titulo)}">` +
+      `<div class="modal-cab"><h2>${esc(titulo)}</h2></div><div class="modal-corpo">${corpo}</div><div class="modal-rodape"></div></div>`;
+    const rodape = fundo.querySelector('.modal-rodape');
+    const anterior = document.activeElement;
+    let fechado = false;
+    function fechar() {
+      if (fechado) return;
+      fechado = true;
+      fundo.remove();
+      document.removeEventListener('keydown', tecla, true);
+      if (aoFechar) aoFechar();
+      if (anterior && anterior.focus && document.contains(anterior) && !focarAposRender) anterior.focus();
+    }
+    function tecla(e) {
+      if (e.key === 'Escape' && $('#modais').lastElementChild === fundo) { e.stopPropagation(); e.preventDefault(); fechar(); }
+    }
+    botoes.forEach(b => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn ' + (b.classe || '');
+      btn.textContent = b.texto;
+      if (b.id) btn.id = b.id;
+      btn.addEventListener('click', async () => {
+        if (b.acao) {
+          const r = await b.acao(fundo, fechar);
+          if (r === false) return;
+        }
+        fechar();
+      });
+      rodape.appendChild(btn);
+    });
+    document.addEventListener('keydown', tecla, true);
+    fundo.addEventListener('mousedown', e => { if (e.target === fundo && fecharFora) fechar(); });
+    $('#modais').appendChild(fundo);
+    if (aoAbrir) aoAbrir(fundo, fechar);
+    const foco = fundo.querySelector('[autofocus]') || rodape.querySelector('.btn-pri') || fundo.querySelector('button, input, select');
+    if (foco) foco.focus();
+    return { el: fundo, fechar };
+  }
+
+  function confirmar(titulo, texto, rotuloOk, classeOk) {
+    return new Promise(resolver => {
+      let ok = false;
+      modal({
+        titulo, corpo: texto,
+        botoes: [{ texto: 'Cancelar' }, { texto: rotuloOk, classe: classeOk || 'btn-pri', acao: () => { ok = true; } }],
+        aoFechar: () => resolver(ok),
+      });
+    });
+  }
+
+  function toast(msg, tipo) {
+    const t = document.createElement('div');
+    t.className = 'toast' + (tipo ? ' ' + tipo : '');
+    t.textContent = msg;
+    const pilha = $('#toasts');
+    while (pilha.children.length >= 3) pilha.firstElementChild.remove();
+    pilha.appendChild(t);
+    setTimeout(() => t.remove(), tipo === 'erro' ? 7000 : 4000);
+  }
+
+  // ---------- Backup ----------
+  async function salvarBackup() {
+    if (!temDados() && !estado.atualizadoEm) { toast('Ainda não há dados para salvar.'); return; }
+    if (!estado.atualizadoEm) estado.atualizadoEm = new Date().toISOString();
+    persistir();
+    const dados = JSON.stringify(Object.assign({}, estado, { salvoEm: new Date().toISOString() }), null, 1);
+    const nome = M.nomeArquivoBackup(new Date());
+    if (!MODO_TESTE && window.showSaveFilePicker) {
+      try {
+        const arq = await window.showSaveFilePicker({
+          id: 'backup-folgas-bwa', suggestedName: nome,
+          types: [{ description: 'Backup do Controle de Folgas', accept: { 'application/json': ['.json'] } }],
+        });
+        const w = await arq.createWritable();
+        await w.write(dados);
+        await w.close();
+        marcarBackup();
+        renderTopo();
+        toast(`Backup salvo: ${arq.name}`);
+        return;
+      } catch (e) {
+        if (e && e.name === 'AbortError') return;
+        // Sem permissão para escolher a pasta: baixa o arquivo normalmente.
+      }
+    }
+    const url = URL.createObjectURL(new Blob([dados], { type: 'application/json' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nome;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    marcarBackup();
+    renderTopo();
+    toast(`Backup salvo: ${nome}`);
+  }
+
+  async function abrirBackup(arquivo) {
+    let obj;
+    try { obj = JSON.parse(await arquivo.text()); }
+    catch (e) { erroModal('Não foi possível abrir o backup', `O arquivo "${arquivo.name}" não é um backup válido. Escolha o arquivo .json salvo pelo botão "Salvar backup".`); return; }
+    const r = M.validarBackup(obj);
+    if (!r.ok) { erroModal('Não foi possível abrir o backup', r.erro); return; }
+    const avisos = [];
+    if (temDados() && estado.atualizadoEm && r.estado.atualizadoEm && r.estado.atualizadoEm < estado.atualizadoEm) {
+      avisos.push(`<p><b>Este arquivo é mais antigo que os dados abertos agora.</b></p><p>Arquivo: alterado em ${fmtDataHora(r.estado.atualizadoEm, true)}.<br>Dados atuais: alterados em ${fmtDataHora(estado.atualizadoEm, true)}.</p>`);
+    }
+    if (pendente()) avisos.push('<p>Há alterações neste navegador que ainda não foram salvas em backup. Elas serão substituídas pelo arquivo.</p>');
+    if (avisos.length) {
+      const ok = await confirmar('Carregar este backup?', avisos.join('') + '<p>Quer carregar o arquivo mesmo assim?</p>', 'Carregar mesmo assim', 'btn-perigo');
+      if (!ok) return;
+    }
+    estado = r.estado;
+    persistir();
+    infoBackup = { versao: estado.atualizadoEm, em: infoBackup && infoBackup.em || null };
+    gravarLS(CH_BACKUP, JSON.stringify(infoBackup));
+    rolarParaHoje = true;
+    recalcular();
+    renderizar();
+    document.querySelectorAll('#modais .modal-fundo').forEach(x => x.remove());
+    toast(`Backup carregado: ${plural(estado.motoristas.length, 'motorista', 'motoristas')}${estado.atualizadoEm ? `, alterado em ${fmtDataHora(estado.atualizadoEm)}` : ''}.`);
+  }
+
+  function erroModal(titulo, texto) {
+    modal({ titulo, corpo: `<p>${esc(texto)}</p>`, botoes: [{ texto: 'Entendi', classe: 'btn-pri' }] });
+  }
+
+  function boasVindas() {
+    modal({
+      titulo: 'Nenhum dado neste navegador',
+      corpo: '<p>Se você já usa o controle, abra o último arquivo de backup (.json) para continuar de onde parou.</p>' +
+        '<p>Se é a primeira vez, importe a planilha com a lista de motoristas.</p>' +
+        '<p class="ajuda">Lembrete: os dados ficam guardados só neste navegador. Clique em "Salvar backup" no fim de cada dia.</p>',
+      fecharFora: false,
+      botoes: [
+        { texto: 'Começar vazio' },
+        { texto: 'Importar motoristas', id: 'bv-importar', acao: () => { abrirImportacao(); } },
+        { texto: 'Abrir backup', classe: 'btn-pri', id: 'bv-abrir', acao: () => { $('#in-backup').click(); } },
+      ],
+    });
+  }
+
+  // ---------- Importar motoristas ----------
+  function abrirImportacao(aoConcluir) {
+    let abas = null, abaSel = 0, itens = [], origem = '', inicio = comp.inicio;
+    let corpoEl = null, btnOk = null;
+    const md = modal({
+      titulo: 'Importar motoristas',
+      corpo: '<p>Escolha a planilha (.xlsx), um arquivo .csv ou .txt, ou cole a lista com um nome por linha.</p>' +
+        '<div class="linha-acoes"><button type="button" class="btn" id="im-arquivo">Escolher arquivo</button><span class="ajuda" id="im-nome-arq"></span></div>' +
+        '<textarea id="im-colar" rows="3" placeholder="Ou cole aqui: um nome por linha"></textarea>' +
+        '<div id="im-previa" style="margin-top:12px"></div>',
+      botoes: [
+        { texto: 'Cancelar' },
+        { texto: 'Importar', classe: 'btn-pri', id: 'im-confirmar', acao: () => concluir() },
+      ],
+      aoAbrir: (el) => {
+        corpoEl = el;
+        btnOk = el.querySelector('#im-confirmar');
+        btnOk.disabled = true;
+        el.querySelector('#im-arquivo').addEventListener('click', () => $('#in-import').click());
+        let espera;
+        el.querySelector('#im-colar').addEventListener('input', e => {
+          clearTimeout(espera);
+          espera = setTimeout(() => {
+            abas = null;
+            usarLinhas(M.linhasDeTexto(e.target.value), 'no texto colado');
+          }, 250);
+        });
+        el.querySelector('#im-previa').addEventListener('change', e => {
+          const t = e.target;
+          if (t.id === 'im-aba') { abaSel = +t.value; usarAba(); }
+          else if (t.id === 'im-inicio') inicio = t.value;
+          else if (t.dataset.i) { itens[+t.dataset.i].sel = t.checked; atualizarBotao(); }
+        });
+      },
+      aoFechar: () => { importacaoAtual = null; },
+    });
+
+    function usarAba() {
+      const aba = abas[abaSel];
+      usarLinhas(aba.linhas, `na aba "${aba.nome.trim()}"`);
+    }
+    function usarLinhas(linhas, deOnde) {
+      const r = M.extrairNomes(linhas);
+      const existentes = new Set(estado.motoristas.map(m => M.normalizarNome(m.nome)));
+      itens = r.itens.map(it => Object.assign(it, { existe: existentes.has(M.normalizarNome(it.nome)) }));
+      itens.forEach(it => { it.sel = !it.existe; });
+      origem = deOnde;
+      renderPrevia();
+    }
+    function renderPrevia() {
+      const novos = itens.filter(i => !i.existe).length;
+      let html = '';
+      if (abas && abas.length > 1) {
+        html += `<label class="campo">Aba da planilha <select id="im-aba">${abas.map((a, i) => `<option value="${i}" ${i === abaSel ? 'selected' : ''}>${esc(a.nome.trim())}</option>`).join('')}</select></label>`;
+      }
+      if (!itens.length) {
+        html += `<p class="vazio">Nenhum nome encontrado ${esc(origem)}.</p>`;
+      } else {
+        html += `<p class="resumo-imp"><b>${itens.length}</b> nomes encontrados ${esc(origem)}: ${plural(novos, 'novo', 'novos')}, ${itens.length - novos} já cadastrados.</p>` +
+          `<label class="campo">Início do controle para os importados <input type="date" id="im-inicio" value="${inicio}"></label>` +
+          '<div class="lista-imp">' + itens.map((it, i) => `<label class="${it.existe ? 'existe' : ''}"><input type="checkbox" data-i="${i}" ${it.sel ? 'checked' : ''} ${it.existe ? 'disabled' : ''}>` +
+            `<span class="li-num">${esc(it.numero)}</span><span>${esc(it.nome)}</span>` +
+            `${it.existe ? '<span class="li-tag">já cadastrado</span>' : it.obs ? `<span class="li-obs">${esc(it.obs)}</span>` : '<span></span>'}</label>`).join('') + '</div>';
+      }
+      corpoEl.querySelector('#im-previa').innerHTML = html;
+      atualizarBotao();
+    }
+    function atualizarBotao() {
+      const n = itens.filter(i => i.sel && !i.existe).length;
+      btnOk.disabled = n === 0;
+      btnOk.textContent = n ? `Importar ${plural(n, 'motorista', 'motoristas')}` : 'Importar';
+    }
+    async function processarArquivo(arq) {
+      corpoEl.querySelector('#im-nome-arq').textContent = arq.name;
+      try {
+        if (/\.xlsx$/i.test(arq.name)) {
+          abas = (await window.LeitorXlsx.lerXlsx(await arq.arrayBuffer())).filter(a => a.linhas.length);
+          if (!abas.length) throw new Error('A planilha não tem abas com dados.');
+          const pontos = abas.map(a => M.extrairNomes(a.linhas).itens.length);
+          const atual = abas.findIndex(a => a.linhas.slice(0, 4).some(l => (l || []).some(v => /motorista/i.test(v) && /atual/i.test(v))));
+          abaSel = atual >= 0 ? atual : pontos.indexOf(Math.max(...pontos));
+          usarAba();
+        } else {
+          abas = null;
+          usarLinhas(M.linhasDeTexto(await arq.text()), `no arquivo ${arq.name}`);
+        }
+      } catch (e) {
+        abas = null; itens = [];
+        corpoEl.querySelector('#im-previa').innerHTML = `<p class="vazio">Não foi possível ler "${esc(arq.name)}": ${esc(e.message)}</p>`;
+        atualizarBotao();
+      }
+    }
+    function concluir() {
+      const sel = itens.filter(i => i.sel && !i.existe);
+      if (!sel.length) return false;
+      if (!M.isoValido(inicio)) { toast('Informe a data de início do controle.', 'erro'); return false; }
+      alterar(s => {
+        for (const it of sel) s.motoristas.push({ id: M.novoId(), numero: it.numero, nome: it.nome, obs: it.obs, ativo: true, inicio, bancoInicial: 0, diasCicloInicial: 0 });
+      });
+      rolarParaHoje = true;
+      renderGrade();
+      toast(`${plural(sel.length, 'motorista importado', 'motoristas importados')}. Confira o saldo inicial em "Motoristas".`);
+      if (aoConcluir) aoConcluir();
+    }
+    importacaoAtual = { processarArquivo, fechar: md.fechar };
+    return md;
+  }
+
+  // ---------- Cadastro de motoristas ----------
+  function abrirMotoristas() {
+    let corpo = null;
+    const linha = m => `<tr data-id="${m.id}" class="${m.ativo === false ? 'inativo' : ''}">` +
+      `<td><input class="in-num" data-campo="numero" value="${esc(m.numero)}" aria-label="Número"></td>` +
+      `<td><input data-campo="nome" value="${esc(m.nome)}" aria-label="Nome"></td>` +
+      `<td><input data-campo="obs" value="${esc(m.obs)}" aria-label="Observação"></td>` +
+      `<td><input type="date" data-campo="inicio" value="${m.inicio || ''}" aria-label="Início do controle"></td>` +
+      `<td><input type="number" class="in-curto" min="0" step="1" data-campo="bancoInicial" value="${m.bancoInicial}" aria-label="Folgas no banco no início"></td>` +
+      `<td><input type="number" class="in-curto" min="0" max="6" step="1" data-campo="diasCicloInicial" value="${m.diasCicloInicial}" aria-label="Dias seguidos antes do início"></td>` +
+      `<td class="centro"><input type="checkbox" data-campo="ativo" ${m.ativo !== false ? 'checked' : ''} aria-label="Ativo"></td>` +
+      `<td><button type="button" class="btn-link perigo" data-remover="${m.id}">Excluir</button></td></tr>`;
+    const preencher = () => {
+      const lista = estado.motoristas.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+      corpo.innerHTML = lista.length ? lista.map(linha).join('') : '<tr><td colspan="8"><p class="vazio" style="padding:14px 4px">Nenhum motorista cadastrado.</p></td></tr>';
+    };
+    modal({
+      titulo: 'Motoristas',
+      largo: true,
+      corpo: '<p class="ajuda">Saldo inicial: para quem já trabalhava antes de começar a usar o controle, informe quantas folgas a pessoa já tem no banco e quantos dias seguidos trabalhou até a véspera do início (0 a 6). Desmarque "Ativo" para tirar alguém da tela sem apagar o histórico.</p>' +
+        '<div class="linha-acoes"><button type="button" class="btn" id="mt-importar">Importar planilha ou lista</button><button type="button" class="btn" id="mt-novo">Adicionar motorista</button><span class="espaco"></span>' +
+        `<label class="campo">Início do controle para todos <input type="date" id="mt-inicio-todos" value="${comp.inicio}"></label><button type="button" class="btn" id="mt-aplicar">Aplicar a todos</button></div>` +
+        '<div class="tabela-wrap"><table class="tabela cadastro"><colgroup><col class="c-num"><col><col class="c-obs"><col class="c-ini"><col class="c-banco"><col class="c-ciclo"><col class="c-ativo"><col class="c-acao"></colgroup><thead><tr><th>Nº</th><th>Nome</th><th>Observação</th><th>Início do controle</th><th>Folgas no banco no início</th><th>Dias seguidos antes do início</th><th>Ativo</th><th></th></tr></thead><tbody id="mt-corpo"></tbody></table></div>',
+      botoes: [{ texto: 'Fechar', classe: 'btn-pri' }],
+      aoAbrir: el => {
+        corpo = el.querySelector('#mt-corpo');
+        preencher();
+        el.querySelector('#mt-importar').addEventListener('click', () => abrirImportacao(preencher));
+        el.querySelector('#mt-novo').addEventListener('click', () => novoMotorista(preencher));
+        el.querySelector('#mt-aplicar').addEventListener('click', async () => {
+          const d = el.querySelector('#mt-inicio-todos').value;
+          if (!M.isoValido(d)) { toast('Escolha uma data válida.', 'erro'); return; }
+          if (!estado.motoristas.length) return;
+          const ok = await confirmar('Aplicar data de início a todos?', `<p>O início do controle de ${plural(estado.motoristas.length, 'motorista', 'motoristas')} passa a ser ${M.fmt(d)}. Lançamentos antes dessa data deixam de contar.</p>`, 'Aplicar a todos');
+          if (!ok) return;
+          alterar(s => s.motoristas.forEach(m => { m.inicio = d; }));
+          preencher();
+          toast(`Início do controle definido em ${M.fmt(d)} para todos.`);
+        });
+        corpo.addEventListener('change', e => {
+          const inp = e.target, campo = inp.dataset.campo;
+          if (!campo) return;
+          const id = inp.closest('tr').dataset.id;
+          const m = motorista(id);
+          let v;
+          if (campo === 'ativo') v = inp.checked;
+          else if (campo === 'bancoInicial') { v = Math.max(0, Math.floor(+inp.value || 0)); inp.value = v; }
+          else if (campo === 'diasCicloInicial') {
+            v = Math.min(6, Math.max(0, Math.floor(+inp.value || 0)));
+            if (String(v) !== inp.value) toast('Dias seguidos antes do início vai de 0 a 6.');
+            inp.value = v;
+          } else if (campo === 'inicio') {
+            if (!M.isoValido(inp.value)) { toast('Informe uma data de início válida.', 'erro'); inp.value = m.inicio || ''; return; }
+            v = inp.value;
+          } else if (campo === 'nome') {
+            v = inp.value.replace(/\s+/g, ' ').trim();
+            if (!v) { toast('O nome não pode ficar vazio.', 'erro'); inp.value = m.nome; return; }
+          } else v = inp.value.trim();
+          alterar(s => { const mm = s.motoristas.find(x => x.id === id); if (mm) mm[campo] = v; });
+          if (campo === 'ativo') inp.closest('tr').classList.toggle('inativo', !v);
+        });
+        corpo.addEventListener('click', async e => {
+          const b = e.target.closest('[data-remover]');
+          if (!b) return;
+          const m = motorista(b.dataset.remover);
+          const ok = await confirmar(`Excluir ${m.nome}?`, '<p>O cadastro e todos os lançamentos desta pessoa serão apagados.</p><p class="ajuda">Para só tirar da tela e manter o histórico, desmarque "Ativo".</p>', 'Excluir motorista', 'btn-perigo');
+          if (!ok) return;
+          alterar(s => { s.motoristas = s.motoristas.filter(x => x.id !== m.id); delete s.lancamentos[m.id]; });
+          preencher();
+          toast(`${m.nome} excluído.`);
+        });
+      },
+    });
+  }
+
+  function novoMotorista(aoConcluir) {
+    modal({
+      titulo: 'Adicionar motorista',
+      corpo: '<label class="campo">Nome <input id="nm-nome" autofocus></label>' +
+        '<div class="campos-linha"><label class="campo">Nº <input id="nm-num"></label><label class="campo">Observação <input id="nm-obs"></label></div>' +
+        `<div class="campos-linha"><label class="campo">Início do controle <input type="date" id="nm-inicio" value="${comp.inicio}"></label>` +
+        '<label class="campo">Folgas no banco no início <input type="number" min="0" id="nm-banco" value="0"></label>' +
+        '<label class="campo">Dias seguidos antes do início <input type="number" min="0" max="6" id="nm-ciclo" value="0"></label></div>',
+      botoes: [
+        { texto: 'Cancelar' },
+        {
+          texto: 'Adicionar motorista', classe: 'btn-pri', acao: el => {
+            const nome = el.querySelector('#nm-nome').value.replace(/\s+/g, ' ').trim();
+            const inicio = el.querySelector('#nm-inicio').value;
+            if (!nome) { toast('Informe o nome.', 'erro'); return false; }
+            if (!M.isoValido(inicio)) { toast('Informe a data de início do controle.', 'erro'); return false; }
+            if (estado.motoristas.some(m => M.normalizarNome(m.nome) === M.normalizarNome(nome))) { toast('Já existe um motorista com esse nome.', 'erro'); return false; }
+            alterar(s => s.motoristas.push({
+              id: M.novoId(), nome, numero: el.querySelector('#nm-num').value.trim(), obs: el.querySelector('#nm-obs').value.trim(), ativo: true, inicio,
+              bancoInicial: Math.max(0, Math.floor(+el.querySelector('#nm-banco').value || 0)),
+              diasCicloInicial: Math.min(6, Math.max(0, Math.floor(+el.querySelector('#nm-ciclo').value || 0))),
+            }));
+            toast(`${nome} adicionado.`);
+            if (aoConcluir) aoConcluir();
+          },
+        },
+      ],
+    });
+  }
+
+  // ---------- Lançar intervalo ----------
+  function abrirIntervalo(idPadrao, dPadrao) {
+    const ativos = motoristasAtivos();
+    if (!ativos.length) { toast('Cadastre motoristas antes de lançar.'); return; }
+    const ini = dPadrao || (HOJE >= comp.inicio && HOJE <= comp.fim ? HOJE : comp.inicio);
+    modal({
+      titulo: 'Lançar vários dias',
+      corpo: '<p class="ajuda">Para férias, afastamentos ou vários dias seguidos do mesmo tipo.</p>' +
+        `<label class="campo">Motorista <select id="iv-mot">${ativos.map(m => `<option value="${m.id}" ${m.id === idPadrao ? 'selected' : ''}>${esc(m.nome)}</option>`).join('')}</select></label>` +
+        '<label class="campo">O que lançar <select id="iv-tipo"><option value="FE">Férias</option><option value="A">Atestado ou afastamento</option><option value="F">Folga</option><option value="X">Falta</option><option value="T">Trabalhou (apaga os lançamentos)</option></select></label>' +
+        `<div class="campos-linha"><label class="campo">De <input type="date" id="iv-de" value="${ini}"></label><label class="campo">Até <input type="date" id="iv-ate" value="${ini}"></label></div>` +
+        '<label class="check" id="iv-abonar-l" hidden><input type="checkbox" id="iv-abonar"> Abonar as faltas com folgas do banco, enquanto houver saldo</label>',
+      botoes: [
+        { texto: 'Cancelar' },
+        {
+          texto: 'Lançar', classe: 'btn-pri', id: 'iv-ok', acao: el => {
+            const id = el.querySelector('#iv-mot').value, t = el.querySelector('#iv-tipo').value;
+            const de = el.querySelector('#iv-de').value, ate = el.querySelector('#iv-ate').value;
+            const abonar = el.querySelector('#iv-abonar').checked;
+            if (!M.isoValido(de) || !M.isoValido(ate)) { toast('Informe as duas datas.', 'erro'); return false; }
+            if (ate < de) { toast('A data final vem antes da inicial.', 'erro'); return false; }
+            if (M.diffDias(de, ate) > 400) { toast('Lance no máximo 400 dias de uma vez.', 'erro'); return false; }
+            const m = motorista(id);
+            const dias = M.diasEntre(de, ate).filter(d => d >= m.inicio);
+            const fora = M.diffDias(de, ate) + 1 - dias.length;
+            if (!dias.length) { toast(`Todas as datas são anteriores ao início do controle de ${m.nome} (${M.fmt(m.inicio)}).`, 'erro'); return false; }
+            alterar(s => {
+              const l = s.lancamentos[id] || (s.lancamentos[id] = {});
+              for (const d of dias) {
+                if (t === 'T') delete l[d];
+                else l[d] = t === 'X' ? { t: 'X', debitar: abonar } : { t };
+              }
+              if (!Object.keys(l).length) delete s.lancamentos[id];
+            });
+            const nomeTipo = t === 'T' ? 'Lançamentos apagados' : M.TIPOS[t].nome;
+            toast(`${nomeTipo}: ${M.fmt(dias[0])} a ${M.fmt(dias[dias.length - 1])} para ${m.nome} (${plural(dias.length, 'dia', 'dias')})${fora ? `. ${plural(fora, 'dia', 'dias')} antes do início ignorados` : ''}.`);
+          },
+        },
+      ],
+      aoAbrir: el => {
+        el.querySelector('#iv-tipo').addEventListener('change', e => { el.querySelector('#iv-abonar-l').hidden = e.target.value !== 'X'; });
+        el.querySelector('#iv-de').addEventListener('change', e => {
+          const ate = el.querySelector('#iv-ate');
+          if (ate.value < e.target.value) ate.value = e.target.value;
+        });
+      },
+    });
+  }
+
+  // ---------- Feriados ----------
+  // Quantos motoristas ativos trabalharam no dia (são os que ganham ou perdem o +1 do feriado).
+  function trabalharamNoDia(d) {
+    if (d > HOJE) return 0;
+    return motoristasAtivos().filter(m => { const x = calc[m.id] && calc[m.id].dias[d]; return x && x.tipo === 'T'; }).length;
+  }
+  function marcarFeriado(d, nome, repetir) {
+    let r;
+    alterar(s => { r = M.adicionarFeriado(s, d, nome, repetir); });
+    const partes = [`${r.anterior ? 'Feriado atualizado' : 'Feriado marcado'}: ${M.fmt(d)}, ${nome}.`];
+    if (repetir) partes.push(`Repete todo ano em ${M.fmtCurto(d)}.`);
+    const n = r.anterior ? 0 : trabalharamNoDia(d);
+    if (n) partes.push(`${plural(n, 'motorista que trabalhou ganhou', 'motoristas que trabalharam ganharam')} +1 no banco.`);
+    toast(partes.join(' '));
+  }
+  function tirarFeriado(d) {
+    const fixo = M.tipoFeriado(estado, d) === 'fixo';
+    const n = trabalharamNoDia(d);
+    let nome;
+    alterar(s => { nome = M.removerFeriado(s, d); });
+    toast(`Feriado removido de ${M.fmt(d)}: ${nome}.${fixo ? ' Nos outros anos ele continua.' : ''}${n ? ` ${plural(n, 'motorista perdeu', 'motoristas perderam')} o +1 desse dia.` : ''}`);
+  }
+  function pararDeRepetir(d) {
+    const nome = estado.feriados[d];
+    alterar(s => { M.pararRepeticao(s, d); });
+    toast(`${nome} não se repete mais depois de ${M.ano(d)}. Em ${M.ano(d)} continua feriado.`);
+  }
+  function etiquetaFeriado(d) {
+    const tipo = M.tipoFeriado(estado, d);
+    if (!tipo) return '';
+    const texto = tipo === 'nacional' ? 'Nacional' : tipo === 'fixo' ? 'Todo ano' : `Só em ${M.ano(d)}`;
+    return `<em class="fe-tag ${tipo}">${texto}</em>`;
+  }
+  // Ao pressionar Enter no campo, aciona o botão indicado.
+  function enterClica(input, botao) {
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); botao.click(); } });
+  }
+
+  function abrirFeriados(anoInicial) {
+    let anoVis = Number.isInteger(anoInicial) ? anoInicial : M.ano(HOJE);
+    let el;
+    const item = d => {
+      const fixo = M.tipoFeriado(estado, d) === 'fixo';
+      const acoes = fixo
+        ? `<button type="button" class="btn-link perigo" data-rem="${d}">Tirar só de ${M.ano(d)}</button><button type="button" class="btn-link" data-parar="${d}">Parar de repetir</button>`
+        : `<button type="button" class="btn-link perigo" data-rem="${d}">Remover</button>`;
+      return `<div class="fe-item"><span class="fe-data">${M.fmtCurto(d)}<small>${M.SEMANA[M.diaSemana(d)]}</small></span>` +
+        `<span>${esc(estado.feriados[d])}${etiquetaFeriado(d)}</span><span class="fe-acoes">${acoes}</span></div>`;
+    };
+    const preencher = () => {
+      M.garantirFeriados(estado, [anoVis]);
+      el.querySelector('#fe-ano').textContent = anoVis;
+      el.querySelector('#fe-facult').textContent = `Adicionar Carnaval e Corpus Christi de ${anoVis}`;
+      const lista = Object.keys(estado.feriados).filter(d => M.ano(d) === anoVis).sort();
+      el.querySelector('#fe-lista').innerHTML = lista.length
+        ? lista.map(item).join('')
+        : '<p class="vazio" style="padding:12px">Nenhum feriado cadastrado neste ano.</p>';
+    };
+    modal({
+      titulo: 'Feriados',
+      medio: true,
+      corpo: '<p class="ajuda">Feriado trabalhado dá +1 folga no banco. Folga em feriado não usa o banco. Os feriados nacionais já vêm cadastrados. ' +
+        'Os municipais e estaduais você inclui uma vez só: com "Repete todo ano" marcado, eles entram sozinhos nos anos seguintes.</p>' +
+        '<div class="fer-nav"><button type="button" class="btn" id="fe-ant" aria-label="Ano anterior">‹</button><b id="fe-ano"></b><button type="button" class="btn" id="fe-prox" aria-label="Próximo ano">›</button><span class="espaco"></span><button type="button" class="btn" id="fe-facult"></button></div>' +
+        '<div class="fe-lista" id="fe-lista"></div>' +
+        '<h3>Incluir feriado municipal ou estadual</h3>' +
+        '<div class="fe-novo"><input type="date" id="fe-data" aria-label="Data do feriado"><input type="text" id="fe-nome" placeholder="Nome do feriado, ex.: Aniversário da cidade" aria-label="Nome do feriado"><button type="button" class="btn btn-pri" id="fe-add">Adicionar feriado</button>' +
+        '<label class="check"><input type="checkbox" id="fe-repetir" checked> Repete todo ano nesta data (desmarque se for só neste ano)</label></div>',
+      botoes: [{ texto: 'Fechar' }],
+      aoAbrir: (e) => {
+        el = e;
+        preencher();
+        el.querySelector('#fe-ant').addEventListener('click', () => { anoVis -= 1; preencher(); });
+        el.querySelector('#fe-prox').addEventListener('click', () => { anoVis += 1; preencher(); });
+        el.querySelector('#fe-facult').addEventListener('click', () => {
+          const f = M.feriadosFacultativos(anoVis);
+          const novos = Object.keys(f).filter(d => !estado.feriados[d]);
+          if (!novos.length) { toast('Carnaval e Corpus Christi já estão cadastrados.'); return; }
+          alterar(s => novos.forEach(d => { s.feriados[d] = f[d]; }));
+          preencher();
+          toast(`${plural(novos.length, 'feriado adicionado', 'feriados adicionados')}.`);
+        });
+        enterClica(el.querySelector('#fe-nome'), el.querySelector('#fe-add'));
+        el.querySelector('#fe-add').addEventListener('click', () => {
+          const d = el.querySelector('#fe-data').value, nome = el.querySelector('#fe-nome').value.replace(/\s+/g, ' ').trim();
+          if (!M.isoValido(d)) { toast('Escolha a data do feriado.', 'erro'); return; }
+          if (!nome) { toast('Informe o nome do feriado.', 'erro'); return; }
+          marcarFeriado(d, nome, el.querySelector('#fe-repetir').checked);
+          anoVis = M.ano(d);
+          el.querySelector('#fe-data').value = '';
+          el.querySelector('#fe-nome').value = '';
+          el.querySelector('#fe-repetir').checked = true;
+          preencher();
+          const novo = el.querySelector(`#fe-lista [data-rem="${d}"]`);
+          if (novo) { const it = novo.closest('.fe-item'); it.classList.add('novo'); it.scrollIntoView({ block: 'nearest' }); }
+        });
+        el.querySelector('#fe-lista').addEventListener('click', ev => {
+          const rem = ev.target.closest('[data-rem]');
+          const parar = ev.target.closest('[data-parar]');
+          if (rem) tirarFeriado(rem.dataset.rem);
+          else if (parar) pararDeRepetir(parar.dataset.parar);
+          else return;
+          preencher();
+        });
+      },
+    });
+  }
+
+  // Clique na data do cabeçalho da grade: marca o dia como feriado ou mostra o feriado já cadastrado.
+  function abrirFeriadoDia(d) {
+    const nome = estado.feriados[d];
+    const dataLonga = `${M.SEMANA_LONGA[M.diaSemana(d)]}, ${M.fmt(d)}`;
+    const verTodos = { texto: 'Ver todos os feriados', acao: () => { setTimeout(() => abrirFeriados(M.ano(d)), 0); } };
+    if (!nome) {
+      const n = trabalharamNoDia(d);
+      const efeito = d > HOJE
+        ? 'Quem trabalhar neste dia vai ganhar +1 folga no banco. Folga neste dia não usa o banco.'
+        : n ? `${plural(n, 'motorista trabalhou', 'motoristas trabalharam')} neste dia e ${n === 1 ? 'vai ganhar' : 'vão ganhar'} +1 folga no banco. Folga neste dia não usa o banco.`
+          : 'Ninguém trabalhou neste dia, então nenhum saldo muda. Folga neste dia não usa o banco.';
+      modal({
+        titulo: `Marcar ${M.fmt(d)} como feriado`,
+        corpo: `<p>${dataLonga}.</p><p class="ajuda">${efeito}</p>` +
+          '<label class="campo">Nome do feriado <input id="fd-nome" autofocus placeholder="Ex.: Aniversário da cidade"></label>' +
+          `<label class="check"><input type="checkbox" id="fd-repetir" checked> Repete todo ano em ${M.fmtCurto(d)} (desmarque se for só em ${M.ano(d)})</label>`,
+        botoes: [
+          verTodos,
+          { texto: 'Cancelar' },
+          {
+            texto: 'Marcar como feriado', classe: 'btn-pri', id: 'fd-ok', acao: el => {
+              const nm = el.querySelector('#fd-nome').value.replace(/\s+/g, ' ').trim();
+              if (!nm) { toast('Informe o nome do feriado.', 'erro'); el.querySelector('#fd-nome').focus(); return false; }
+              marcarFeriado(d, nm, el.querySelector('#fd-repetir').checked);
+            },
+          },
+        ],
+        aoAbrir: el => enterClica(el.querySelector('#fd-nome'), el.querySelector('#fd-ok')),
+      });
+      return;
+    }
+    const tipo = M.tipoFeriado(estado, d);
+    const explica = tipo === 'nacional' ? 'Feriado nacional, cadastrado automaticamente.'
+      : tipo === 'fixo' ? `Repete todo ano em ${M.fmtCurto(d)}.` : `Vale só em ${M.ano(d)}.`;
+    const efeito = d > HOJE ? 'Quem trabalhar neste dia vai ganhar +1 folga no banco.' : 'Quem trabalhou neste dia ganhou +1 folga no banco.';
+    const botoes = [verTodos];
+    if (tipo === 'fixo') {
+      botoes.push({ texto: `Tirar só de ${M.ano(d)}`, id: 'fd-tirar', acao: () => tirarFeriado(d) });
+      botoes.push({ texto: 'Parar de repetir', id: 'fd-parar', acao: () => pararDeRepetir(d) });
+    } else {
+      botoes.push({ texto: 'Remover feriado', id: 'fd-tirar', acao: () => tirarFeriado(d) });
+    }
+    botoes.push({ texto: 'Fechar', classe: 'btn-pri' });
+    modal({
+      titulo: `Feriado em ${M.fmt(d)}`,
+      corpo: `<p class="fe-dia"><b>${esc(nome)}</b>${etiquetaFeriado(d)}</p><p class="ajuda">${dataLonga}. ${explica} ${efeito} Folga neste dia não usa o banco.</p>`,
+      botoes,
+    });
+  }
+
+  // ---------- Extrato do motorista ----------
+  function abrirExtrato(id) {
+    const m = motorista(id), c = calc[id];
+    const r = M.resumoPeriodo(c, comp, HOJE);
+    const st = M.statusHoje(c, HOJE);
+    const movs = c.extrato.slice().reverse();
+    const aviso = st === 'hoje' ? '<p><b style="color:var(--vermelho)">Hoje é o 7º dia do ciclo.</b> Se a pessoa folgar hoje, marque a folga.</p>'
+      : st === 'amanha' ? '<p><b style="color:var(--amarelo-txt)">Amanhã é o 7º dia do ciclo.</b></p>' : '';
+    modal({
+      titulo: m.nome,
+      corpo: '<div class="ext-resumo">' +
+        `<div><span>Folgas no banco hoje</span><b>${c.banco}</b></div>` +
+        `<div><span>Dias seguidos hoje</span><b>${c.ciclo}</b></div>` +
+        `<div><span>Trabalhados em ${comp.rotulo}</span><b>${r.trabalhados}</b></div></div>` + aviso +
+        `<p class="ajuda">Em ${comp.rotulo}: ${plural(r.folgas, 'folga', 'folgas')}, ${plural(r.ferias, 'dia', 'dias')} de férias, ${plural(r.atestados, 'dia', 'dias')} de atestado, ${plural(r.faltas, 'falta', 'faltas')}. Banco: +${r.ganhas} e −${r.usadas} no período.</p>` +
+        `<p class="ajuda">Início do controle: ${M.fmt(m.inicio)}. Saldo inicial: ${plural(m.bancoInicial, 'folga', 'folgas')} no banco e ${plural(m.diasCicloInicial, 'dia seguido', 'dias seguidos')}.</p>` +
+        '<h3>Movimentos do banco</h3>' +
+        (movs.length
+          ? `<div class="tabela-wrap" style="max-height:40vh"><table class="tabela ext"><thead><tr><th>Data</th><th>Movimento</th><th>Qtde</th><th>Saldo</th></tr></thead><tbody>${movs.map(e => `<tr><td>${M.fmt(e.data)}</td><td>${esc(e.motivo)}</td><td class="${e.delta > 0 ? 'pos' : 'neg'}">${e.delta > 0 ? '+' : '−'}${Math.abs(e.delta)}</td><td>${e.saldo}</td></tr>`).join('')}</tbody></table></div>`
+          : '<p class="vazio">Nenhum movimento no banco até hoje.</p>'),
+      botoes: [
+        { texto: 'Lançar vários dias', acao: () => { setTimeout(() => abrirIntervalo(id), 0); } },
+        { texto: 'Fechar', classe: 'btn-pri' },
+      ],
+    });
+  }
+
+  // ---------- Eventos ----------
+  function ligarEventos() {
+    $('#comp-ant').addEventListener('click', () => { comp = M.competenciaVizinha(comp, -1); rolarParaHoje = true; recalcular(); renderizar(); });
+    $('#comp-prox').addEventListener('click', () => { comp = M.competenciaVizinha(comp, 1); rolarParaHoje = true; recalcular(); renderizar(); });
+    $('#comp-atual').addEventListener('click', () => { comp = M.competenciaDe(HOJE); rolarParaHoje = true; recalcular(); renderizar(); });
+    $('#bt-salvar').addEventListener('click', salvarBackup);
+    $('#bt-abrir').addEventListener('click', () => $('#in-backup').click());
+    $('#bt-motoristas').addEventListener('click', abrirMotoristas);
+    $('#bt-feriados').addEventListener('click', () => abrirFeriados());
+    $('#bt-intervalo').addEventListener('click', () => abrirIntervalo(celFoco && celFoco.id));
+    $('#in-backup').addEventListener('change', e => {
+      const arq = e.target.files[0];
+      e.target.value = '';
+      if (arq) abrirBackup(arq);
+    });
+    $('#in-import').addEventListener('change', e => {
+      const arq = e.target.files[0];
+      e.target.value = '';
+      if (!arq) return;
+      if (!importacaoAtual) abrirImportacao();
+      importacaoAtual.processarArquivo(arq);
+    });
+    let esperaBusca;
+    $('#busca').addEventListener('input', e => {
+      clearTimeout(esperaBusca);
+      esperaBusca = setTimeout(() => { filtro = M.normalizarNome(e.target.value); renderGrade(); }, 120);
+    });
+    document.querySelector('.painel').addEventListener('click', e => {
+      const b = e.target.closest('[data-ir]');
+      if (b) irPara(b.dataset.ir);
+    });
+
+    const grade = $('#grade');
+    grade.addEventListener('click', e => {
+      const acao = e.target.closest('[data-acao]');
+      if (acao) { if (acao.dataset.acao === 'importar') abrirImportacao(); else $('#in-backup').click(); return; }
+      const ext = e.target.closest('[data-extrato]');
+      if (ext) { abrirExtrato(ext.dataset.extrato); return; }
+      const dia = e.target.closest('[data-dia]');
+      if (dia) { abrirFeriadoDia(dia.dataset.dia); return; }
+      const td = e.target.closest('td.cel');
+      if (!td) return;
+      if (td.classList.contains('antes')) {
+        const m = motorista(td.parentElement.dataset.id);
+        toast(`Antes do início do controle de ${m.nome} (${M.fmt(m.inicio)}). A data de início fica em "Motoristas".`);
+        return;
+      }
+      abrirMenu(td);
+    });
+    grade.addEventListener('keydown', e => {
+      const td = e.target.closest && e.target.closest('td.cel');
+      if (!td) return;
+      const tr = td.parentElement;
+      const idx = [...tr.children].indexOf(td);
+      let alvo = null;
+      switch (e.key) {
+        case 'ArrowRight': alvo = td.nextElementSibling; break;
+        case 'ArrowLeft': alvo = td.previousElementSibling; break;
+        case 'ArrowDown': alvo = tr.nextElementSibling && tr.nextElementSibling.children[idx]; break;
+        case 'ArrowUp': alvo = tr.previousElementSibling && tr.previousElementSibling.children[idx]; break;
+        case 'Enter': case ' ':
+          e.preventDefault();
+          if (!td.classList.contains('antes')) abrirMenu(td);
+          return;
+        default: {
+          const op = OPCOES.find(o => o.tecla === e.key) || ((e.key === 'Delete' || e.key === 'Backspace') ? OPCOES[0] : null);
+          if (op && !td.classList.contains('antes')) { e.preventDefault(); definirTipo(tr.dataset.id, td.dataset.d, op.t); }
+          return;
+        }
+      }
+      if (alvo && alvo.matches('td.cel')) { e.preventDefault(); focarCel(alvo); }
+    });
+
+    document.addEventListener('mousedown', e => {
+      if (menuAberto && !menuAberto.el.contains(e.target) && e.target !== menuAberto.td) fecharMenu();
+    });
+    $('#grade-wrap').addEventListener('scroll', fecharMenu, { passive: true });
+    window.addEventListener('resize', () => { fecharMenu(); ajustarTopo(); });
+    window.addEventListener('beforeunload', e => {
+      if (pendente()) { e.preventDefault(); e.returnValue = ''; }
+    });
+    window.addEventListener('storage', e => {
+      if (e.key !== CH_ESTADO && e.key !== CH_BACKUP) return;
+      carregarLocal();
+      recalcular();
+      renderizar();
+      toast('Os dados foram alterados em outra aba e foram atualizados aqui.');
+    });
+  }
+
+  function ajustarTopo() {
+    document.documentElement.style.setProperty('--alt-topo', $('#topo').offsetHeight + 'px');
+  }
+
+  // ---------- Início ----------
+  carregarLocal();
+  ligarEventos();
+  recalcular();
+  renderizar();
+  ajustarTopo();
+  if (!temDados() && !estado.atualizadoEm) boasVindas();
+
+  // Exposto para testes automatizados e depuração no console.
+  window.App = {
+    get estado() { return estado; },
+    get calc() { return calc; },
+    get comp() { return comp; },
+    HOJE, pendente, salvarBackup,
+  };
+})();
+</script>
+</body>
+</html>
